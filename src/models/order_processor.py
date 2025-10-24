@@ -1,24 +1,28 @@
 """Order Processor - handles order processing and set decoding logic"""
 import pandas as pd
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from .product_manager import ProductManager
 from .set_manager import SetManager
+from .addition_manager import AdditionManager
 from ..utils.sku_generator import generate_sku_from_name, is_empty_sku
 
 
 class OrderProcessor:
     """Processes orders and decodes sets into individual components"""
 
-    def __init__(self, product_manager: ProductManager, set_manager: SetManager):
+    def __init__(self, product_manager: ProductManager, set_manager: SetManager,
+                 addition_manager: Optional[AdditionManager] = None):
         """
         Initialize order processor
 
         Args:
             product_manager: ProductManager instance with loaded product data
             set_manager: SetManager instance with loaded set data
+            addition_manager: Optional AdditionManager instance for automatic product additions
         """
         self.product_manager = product_manager
         self.set_manager = set_manager
+        self.addition_manager = addition_manager or AdditionManager()
         self._orders_df: pd.DataFrame = None
 
     def load_orders(self, df: pd.DataFrame) -> None:
@@ -148,6 +152,9 @@ class OrderProcessor:
                 # Regular product - add as-is
                 processed_rows.append(order_row.to_dict())
 
+        # Apply addition rules (automatic companion products)
+        processed_rows = self._apply_addition_rules(processed_rows)
+
         # Create output DataFrame
         return pd.DataFrame(processed_rows)
 
@@ -201,6 +208,69 @@ class OrderProcessor:
                 new_row['Lineitem price'] = 0
 
             processed_rows.append(new_row)
+
+    def _apply_addition_rules(self, processed_rows: List[Dict]) -> List[Dict]:
+        """
+        Apply automatic product addition rules to processed orders
+
+        For each order, check if any product SKU has an addition rule.
+        If so, automatically add the companion product if it's not already in the order.
+
+        Args:
+            processed_rows: List of processed order rows
+
+        Returns:
+            List of order rows with additions applied
+        """
+        # Group rows by Order ID to process each order separately
+        orders_by_id = {}
+        for row in processed_rows:
+            order_id = row['Name']
+            if order_id not in orders_by_id:
+                orders_by_id[order_id] = []
+            orders_by_id[order_id].append(row)
+
+        result_rows = []
+
+        # Process each order
+        for order_id, order_rows in orders_by_id.items():
+            # Get all SKUs in this order
+            existing_skus = {row['Lineitem sku'] for row in order_rows}
+
+            # Check each row for addition rules
+            additions_to_add = []
+            for row in order_rows:
+                sku = row['Lineitem sku']
+
+                # Check if this SKU has an addition rule
+                if self.addition_manager.has_addition_rule(sku):
+                    rule = self.addition_manager.get_addition_rule(sku)
+                    add_sku = rule['add_sku']
+                    add_quantity = rule['quantity']
+
+                    # Only add if not already in order
+                    if add_sku not in existing_skus:
+                        # Create new row for the added product
+                        new_row = row.copy()
+                        new_row['Lineitem sku'] = add_sku
+                        new_row['Lineitem quantity'] = add_quantity
+                        new_row['Lineitem price'] = 0  # Added products have 0 price
+
+                        # Get product name from product manager
+                        product_details = self.product_manager.get_product(add_sku)
+                        if product_details:
+                            new_row['Lineitem name'] = product_details['name']
+                        else:
+                            new_row['Lineitem name'] = add_sku
+
+                        additions_to_add.append(new_row)
+                        existing_skus.add(add_sku)  # Mark as added to avoid duplicates
+
+            # Add original rows and additions
+            result_rows.extend(order_rows)
+            result_rows.extend(additions_to_add)
+
+        return result_rows
 
     def get_orders_dataframe(self) -> pd.DataFrame:
         """

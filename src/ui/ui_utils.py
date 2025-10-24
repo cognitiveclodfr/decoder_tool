@@ -78,7 +78,8 @@ class ToolTip:
             relief=tk.SOLID,
             borderwidth=1,
             font=FONTS['small'],
-            padding=(5, 3)
+            padx=5,
+            pady=3
         )
         label.pack()
 

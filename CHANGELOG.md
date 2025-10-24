@@ -2,6 +2,68 @@
 
 All notable changes to Decoder Tool will be documented in this file.
 
+## [2.3.0] - 2025-10-24
+
+### 🎉 New Feature: Automatic Companion Product Addition
+
+Added powerful new functionality to automatically add companion/accessory products to orders based on rules defined in master file.
+
+### ✨ Features
+
+**ADDITION Sheet Support**
+- New optional `ADDITION` sheet in master file for defining addition rules
+- Columns: `IF_SKU` (trigger product), `THEN_ADD` (product to add), `QUANTITY` (optional, defaults to 1)
+- Example: When order contains `NECTAR-30`, automatically add `NECTAR-DROPPER` with quantity 1
+- Companion products added with price = 0 to maintain order total
+- Smart detection: only adds if companion product not already in order
+
+**AdditionManager**
+- New manager class for handling automatic product additions
+- Full API: `load_from_dataframe()`, `has_addition_rule()`, `get_addition_rule()`, `count()`, `clear()`
+- Robust validation: handles empty values, NaN, whitespace
+- Supports duplicate trigger SKUs (last rule wins)
+
+**OrderProcessor Enhancement**
+- Integrated addition rules into order processing workflow
+- Applies additions after set decoding
+- Groups additions by order to prevent duplicates
+- Preserves all order metadata for added products
+
+**UI Integration**
+- Master file loader automatically detects and loads ADDITION sheet
+- Logs addition rules count when master file loaded
+- Gracefully handles master files without ADDITION sheet (backwards compatible)
+- All three master file loading methods support additions (load, reload, load from path)
+
+### 🐛 Bug Fixes
+- **Fixed tooltips**: Changed from unsupported `padding` parameter to `padx`/`pady` in tk.Label
+  - Tooltips now display correctly without empty gray boxes
+  - Proper padding around tooltip text
+
+### ✅ Testing
+- **14 new AdditionManager tests** (112 total tests now, all passing)
+  - Test initialization, loading, validation
+  - Test rule retrieval and existence checking
+  - Test edge cases: empty values, NaN, whitespace, duplicates
+  - Test quantity handling and defaults
+- Updated integration tests for new MasterFileLoader signature
+- Comprehensive test coverage for addition rules workflow
+
+### 📝 Technical Details
+- `MasterFileLoader.load()` now returns `Tuple[DataFrame, DataFrame, Optional[DataFrame]]`
+  - Third return value is additions DataFrame or None if sheet doesn't exist
+- `OrderProcessor.__init__()` now accepts optional `AdditionManager` parameter
+- New `_apply_addition_rules()` method in OrderProcessor
+- Addition rules applied per-order to prevent cross-order additions
+- Full backwards compatibility: old master files without ADDITION sheet work fine
+
+### 📖 Use Cases
+Perfect for products that require accessories:
+- Essential oils that need droppers
+- Products requiring batteries
+- Items with mandatory accessories
+- Subscription boxes with promotional items
+
 ## [2.2.1] - 2025-10-24
 
 ### 🐛 Bug Fixes

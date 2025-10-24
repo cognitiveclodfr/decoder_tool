@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.models.product_manager import ProductManager
 from src.models.set_manager import SetManager
+from src.models.addition_manager import AdditionManager
 from src.models.order_processor import OrderProcessor
 from src.utils.file_handlers import MasterFileLoader, OrdersFileLoader
 from src.ui.preview_window import show_preview
@@ -50,7 +51,8 @@ class DecoderToolApp:
         # Initialize managers
         self.product_manager = ProductManager()
         self.set_manager = SetManager()
-        self.order_processor = OrderProcessor(self.product_manager, self.set_manager)
+        self.addition_manager = AdditionManager()
+        self.order_processor = OrderProcessor(self.product_manager, self.set_manager, self.addition_manager)
 
         # State tracking
         self.master_loaded = False
@@ -429,14 +431,25 @@ class DecoderToolApp:
             self._update_status("Loading master file...", 'info')
             self.logger.log_info(f"Loading master file: {file_path}", "MasterFile")
 
-            # Load products and sets
-            products_df, sets_df = MasterFileLoader.load(file_path)
+            # Load products, sets, and optional additions
+            products_df, sets_df, additions_df = MasterFileLoader.load(file_path)
 
             self.product_manager.clear()
             self.product_manager.load_from_dataframe(products_df)
 
             self.set_manager.clear()
             self.set_manager.load_from_dataframe(sets_df)
+
+            # Load addition rules if available
+            self.addition_manager.clear()
+            if additions_df is not None:
+                try:
+                    self.addition_manager.load_from_dataframe(additions_df)
+                    addition_count = self.addition_manager.count()
+                    if addition_count > 0:
+                        self.logger.log_info(f"Loaded {addition_count} addition rules", "AdditionRules")
+                except Exception as e:
+                    self.logger.log_warning(f"Could not load addition rules: {str(e)}", "AdditionRules")
 
             # Update state
             self.master_loaded = True
@@ -491,14 +504,25 @@ class DecoderToolApp:
             # Save current file path
             file_path = self.current_master_file
 
-            # Load products and sets
-            products_df, sets_df = MasterFileLoader.load(file_path)
+            # Load products, sets, and optional additions
+            products_df, sets_df, additions_df = MasterFileLoader.load(file_path)
 
             self.product_manager.clear()
             self.product_manager.load_from_dataframe(products_df)
 
             self.set_manager.clear()
             self.set_manager.load_from_dataframe(sets_df)
+
+            # Load addition rules if available
+            self.addition_manager.clear()
+            if additions_df is not None:
+                try:
+                    self.addition_manager.load_from_dataframe(additions_df)
+                    addition_count = self.addition_manager.count()
+                    if addition_count > 0:
+                        self.logger.log_info(f"Loaded {addition_count} addition rules", "AdditionRules")
+                except Exception as e:
+                    self.logger.log_warning(f"Could not load addition rules: {str(e)}", "AdditionRules")
 
             # Update status
             product_count = self.product_manager.count()
@@ -602,13 +626,24 @@ class DecoderToolApp:
         try:
             self._update_status(f"Loading {Path(file_path).name}...", 'info')
 
-            products_df, sets_df = MasterFileLoader.load(file_path)
+            products_df, sets_df, additions_df = MasterFileLoader.load(file_path)
 
             self.product_manager.clear()
             self.product_manager.load_from_dataframe(products_df)
 
             self.set_manager.clear()
             self.set_manager.load_from_dataframe(sets_df)
+
+            # Load addition rules if available
+            self.addition_manager.clear()
+            if additions_df is not None:
+                try:
+                    self.addition_manager.load_from_dataframe(additions_df)
+                    addition_count = self.addition_manager.count()
+                    if addition_count > 0:
+                        self.logger.log_info(f"Loaded {addition_count} addition rules", "AdditionRules")
+                except Exception as e:
+                    self.logger.log_warning(f"Could not load addition rules: {str(e)}", "AdditionRules")
 
             self.master_loaded = True
             self.current_master_file = file_path
