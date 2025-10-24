@@ -8,7 +8,7 @@ class SetManager:
 
     def __init__(self):
         """Initialize empty set map"""
-        self._set_map: Dict[str, List[str]] = {}
+        self._set_map: Dict[str, List[Dict[str, any]]] = {}
 
     def load_from_dataframe(self, df: pd.DataFrame) -> None:
         """
@@ -18,6 +18,7 @@ class SetManager:
         - SET_Name: Set/bundle name
         - SET_SKU: Set SKU (unique identifier)
         - SKUs_in_SET: Component SKU (one per row)
+        - SET_QUANTITY: Quantity of component in set (optional, defaults to 1)
 
         Multiple rows with the same SET_SKU represent different components of the set.
 
@@ -33,24 +34,52 @@ class SetManager:
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
 
+        # Check if SET_QUANTITY column exists
+        has_quantity_column = 'SET_QUANTITY' in df.columns
+
         # Group by SET_SKU to collect all components
         self._set_map = {}
         grouped = df.groupby('SET_SKU')
 
         for set_sku, group in grouped:
-            # Collect all component SKUs for this set
-            component_skus = []
+            # Collect all component SKUs with quantities for this set
+            components = []
             for _, row in group.iterrows():
                 component_sku = str(row['SKUs_in_SET']).strip()
                 if component_sku:  # Skip empty values
-                    component_skus.append(component_sku)
+                    # Get quantity from SET_QUANTITY column, default to 1
+                    if has_quantity_column:
+                        try:
+                            quantity = int(row['SET_QUANTITY'])
+                        except (ValueError, TypeError):
+                            quantity = 1
+                    else:
+                        quantity = 1
 
-            if component_skus:  # Only add if there are components
-                self._set_map[str(set_sku).strip()] = component_skus
+                    components.append({
+                        'sku': component_sku,
+                        'quantity': quantity
+                    })
 
-    def get_components(self, set_sku: str) -> Optional[List[str]]:
+            if components:  # Only add if there are components
+                self._set_map[str(set_sku).strip()] = components
+
+    def get_components(self, set_sku: str) -> Optional[List[Dict[str, any]]]:
         """
-        Get list of component SKUs for a set
+        Get list of component SKUs with quantities for a set
+
+        Args:
+            set_sku: Set SKU
+
+        Returns:
+            List of component dictionaries with 'sku' and 'quantity' keys,
+            or None if set not found
+        """
+        return self._set_map.get(str(set_sku).strip())
+
+    def get_component_skus(self, set_sku: str) -> Optional[List[str]]:
+        """
+        Get list of component SKUs only (without quantities) for a set
 
         Args:
             set_sku: Set SKU
@@ -58,7 +87,10 @@ class SetManager:
         Returns:
             List of component SKUs, or None if set not found
         """
-        return self._set_map.get(str(set_sku).strip())
+        components = self.get_components(set_sku)
+        if components:
+            return [comp['sku'] for comp in components]
+        return None
 
     def is_set(self, sku: str) -> bool:
         """

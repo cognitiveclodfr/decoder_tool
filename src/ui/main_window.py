@@ -99,12 +99,23 @@ class DecoderToolApp:
         section.grid(row=row, column=0, sticky=(tk.W, tk.E, tk.N), pady=5)
         section.columnconfigure(1, weight=1)
 
-        # Load orders button
+        # Load buttons container
+        load_buttons_frame = ttk.Frame(section)
+        load_buttons_frame.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+
+        # Load single file button
         ttk.Button(
-            section,
-            text="Load Orders Export (.csv)",
+            load_buttons_frame,
+            text="Load Single CSV File",
             command=self._load_orders
-        ).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ).pack(side=tk.LEFT, padx=(0, 5))
+
+        # Load folder button
+        ttk.Button(
+            load_buttons_frame,
+            text="Load Folder with CSV Files",
+            command=self._load_orders_folder
+        ).pack(side=tk.LEFT)
 
         # Orders status label
         self.orders_status_label = ttk.Label(section, text="No orders loaded", foreground="gray")
@@ -288,6 +299,48 @@ class DecoderToolApp:
             self._set_status(error_msg, "red")
             messagebox.showerror("Error", error_msg)
 
+    def _load_orders_folder(self):
+        """Handle loading orders from folder with multiple CSV files"""
+        if not self.master_loaded:
+            messagebox.showwarning("Warning", "Please load master file first")
+            return
+
+        folder_path = filedialog.askdirectory(
+            title="Select Folder with CSV Files"
+        )
+
+        if not folder_path:
+            return
+
+        try:
+            self._set_status("Loading CSV files from folder...", "blue")
+
+            # Load all CSV files from folder
+            orders_df, file_names = OrdersFileLoader.load_from_folder(folder_path)
+            self.order_processor.load_orders(orders_df)
+
+            self.orders_loaded = True
+
+            # Update UI
+            files_info = f"{len(file_names)} CSV file(s): {', '.join(file_names[:3])}"
+            if len(file_names) > 3:
+                files_info += f", and {len(file_names) - 3} more"
+
+            success_msg = f"Loaded {files_info} ({self.order_processor.get_order_count()} rows total)"
+            self.orders_status_label.config(text=success_msg, foreground="green")
+            self._set_status(success_msg, "green")
+
+            detailed_msg = f"Successfully loaded {len(file_names)} CSV file(s):\n\n"
+            detailed_msg += "\n".join([f"• {name}" for name in file_names])
+            detailed_msg += f"\n\nTotal rows: {self.order_processor.get_order_count()}"
+
+            messagebox.showinfo("Success", detailed_msg)
+
+        except Exception as e:
+            error_msg = f"Error loading folder: {str(e)}"
+            self._set_status(error_msg, "red")
+            messagebox.showerror("Error", error_msg)
+
     def _add_manual_product(self):
         """Handle manual product addition"""
         if not self.orders_loaded:
@@ -396,7 +449,7 @@ class DecoderToolApp:
             for sku in set_skus:
                 if not is_empty_sku(sku) and self.set_manager.is_set(sku):
                     components = self.set_manager.get_components(sku)
-                    if not components:
+                    if not components or len(components) == 0:
                         non_decodable.append(sku)
 
             if non_decodable:

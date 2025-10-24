@@ -1,6 +1,7 @@
 """File handlers for loading master files and order exports"""
 import pandas as pd
-from typing import Tuple, Optional
+from pathlib import Path
+from typing import Tuple, Optional, List
 
 
 class MasterFileLoader:
@@ -68,6 +69,82 @@ class OrdersFileLoader:
             raise FileNotFoundError(f"File not found: {file_path}")
         except Exception as e:
             raise ValueError(f"Error loading orders file: {str(e)}")
+
+    @staticmethod
+    def load_multiple(file_paths: List[str]) -> pd.DataFrame:
+        """
+        Load and combine multiple CSV files into single DataFrame
+
+        Args:
+            file_paths: List of paths to CSV files
+
+        Returns:
+            Combined DataFrame with all order data
+
+        Raises:
+            FileNotFoundError: If any file doesn't exist
+            ValueError: If files cannot be parsed or combined
+        """
+        if not file_paths:
+            raise ValueError("No files provided")
+
+        dataframes = []
+
+        for file_path in file_paths:
+            try:
+                df = pd.read_csv(file_path)
+                dataframes.append(df)
+            except FileNotFoundError:
+                raise FileNotFoundError(f"File not found: {file_path}")
+            except Exception as e:
+                raise ValueError(f"Error loading {file_path}: {str(e)}")
+
+        # Combine all dataframes
+        try:
+            combined_df = pd.concat(dataframes, ignore_index=True)
+            return combined_df
+        except Exception as e:
+            raise ValueError(f"Error combining CSV files: {str(e)}")
+
+    @staticmethod
+    def load_from_folder(folder_path: str) -> Tuple[pd.DataFrame, List[str]]:
+        """
+        Load all CSV files from a folder
+
+        Args:
+            folder_path: Path to folder containing CSV files
+
+        Returns:
+            Tuple of (combined DataFrame, list of loaded file names)
+
+        Raises:
+            FileNotFoundError: If folder doesn't exist
+            ValueError: If no CSV files found or loading fails
+        """
+        folder = Path(folder_path)
+
+        if not folder.exists():
+            raise FileNotFoundError(f"Folder not found: {folder_path}")
+
+        if not folder.is_dir():
+            raise ValueError(f"Path is not a folder: {folder_path}")
+
+        # Find all CSV files
+        csv_files = list(folder.glob('*.csv'))
+
+        if not csv_files:
+            raise ValueError(f"No CSV files found in folder: {folder_path}")
+
+        # Sort files by name for consistent ordering
+        csv_files.sort()
+
+        file_paths = [str(f) for f in csv_files]
+        file_names = [f.name for f in csv_files]
+
+        # Load and combine
+        combined_df = OrdersFileLoader.load_multiple(file_paths)
+
+        return combined_df, file_names
 
     @staticmethod
     def save(df: pd.DataFrame, file_path: str) -> None:

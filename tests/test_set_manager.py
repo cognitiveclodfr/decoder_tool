@@ -57,9 +57,16 @@ class TestSetManager:
         components = set_manager.get_components('SET-RELAX')
         assert components is not None
         assert len(components) == 3
-        assert 'LAV-10ML' in components
-        assert 'CHAM-10ML' in components
-        assert 'BOX-RELAX' in components
+
+        # Components are now dicts with 'sku' and 'quantity'
+        component_skus = [comp['sku'] for comp in components]
+        assert 'LAV-10ML' in component_skus
+        assert 'CHAM-10ML' in component_skus
+        assert 'BOX-RELAX' in component_skus
+
+        # Check default quantity is 1
+        for comp in components:
+            assert comp['quantity'] == 1
 
     def test_get_components_not_found(self, set_manager, sample_sets_df):
         """Test getting components for non-existent set"""
@@ -111,4 +118,65 @@ class TestSetManager:
 
         components = set_manager.get_components('SET-TEST')
         assert len(components) == 1
-        assert 'COMP-1' in components
+
+        # Components are now dicts with 'sku' and 'quantity'
+        component_skus = [comp['sku'] for comp in components]
+        assert 'COMP-1' in component_skus
+        assert components[0]['quantity'] == 1
+
+    def test_set_quantity_column(self, set_manager):
+        """Test SET_QUANTITY column support"""
+        df_with_quantities = pd.DataFrame({
+            'SET_Name': ['Bundle A', 'Bundle A', 'Bundle A'],
+            'SET_SKU': ['SET-A', 'SET-A', 'SET-A'],
+            'SKUs_in_SET': ['COMP-1', 'COMP-2', 'COMP-3'],
+            'SET_QUANTITY': [2, 1, 3]  # Different quantities
+        })
+
+        set_manager.load_from_dataframe(df_with_quantities)
+
+        components = set_manager.get_components('SET-A')
+        assert len(components) == 3
+
+        # Check that quantities are correctly loaded
+        assert components[0] == {'sku': 'COMP-1', 'quantity': 2}
+        assert components[1] == {'sku': 'COMP-2', 'quantity': 1}
+        assert components[2] == {'sku': 'COMP-3', 'quantity': 3}
+
+    def test_set_quantity_defaults_to_one(self, set_manager):
+        """Test that missing SET_QUANTITY column defaults to 1"""
+        df_without_quantity = pd.DataFrame({
+            'SET_Name': ['Bundle B', 'Bundle B'],
+            'SET_SKU': ['SET-B', 'SET-B'],
+            'SKUs_in_SET': ['COMP-X', 'COMP-Y']
+            # No SET_QUANTITY column
+        })
+
+        set_manager.load_from_dataframe(df_without_quantity)
+
+        components = set_manager.get_components('SET-B')
+        assert len(components) == 2
+
+        # Both should default to quantity 1
+        assert components[0]['quantity'] == 1
+        assert components[1]['quantity'] == 1
+
+    def test_set_quantity_invalid_values(self, set_manager):
+        """Test handling of invalid SET_QUANTITY values"""
+        df_with_invalid = pd.DataFrame({
+            'SET_Name': ['Bundle C', 'Bundle C', 'Bundle C'],
+            'SET_SKU': ['SET-C', 'SET-C', 'SET-C'],
+            'SKUs_in_SET': ['COMP-1', 'COMP-2', 'COMP-3'],
+            'SET_QUANTITY': [2, 'invalid', None]  # Invalid values
+        })
+
+        set_manager.load_from_dataframe(df_with_invalid)
+
+        components = set_manager.get_components('SET-C')
+        assert len(components) == 3
+
+        # Valid quantity should be preserved
+        assert components[0]['quantity'] == 2
+        # Invalid values should default to 1
+        assert components[1]['quantity'] == 1
+        assert components[2]['quantity'] == 1

@@ -163,15 +163,18 @@ class OrderProcessor:
         order_quantity = int(order_row['Lineitem quantity'])
         order_price = order_row['Lineitem price']
 
-        # Get set components
-        component_skus = self.set_manager.get_components(set_sku)
+        # Get set components with quantities
+        components = self.set_manager.get_components(set_sku)
 
-        if not component_skus:
+        if not components:
             # No components found - skip this set
             return
 
         # Process each component
-        for idx, component_sku in enumerate(component_skus):
+        for idx, component in enumerate(components):
+            component_sku = component['sku']
+            set_quantity = component['quantity']  # Quantity of this component in the set
+
             new_row = order_row.to_dict()
 
             # Get component details from product map
@@ -188,7 +191,8 @@ class OrderProcessor:
 
             # Update component info
             new_row['Lineitem sku'] = component_sku
-            new_row['Lineitem quantity'] = order_quantity * physical_qty
+            # Final quantity = order_quantity × set_quantity × physical_qty
+            new_row['Lineitem quantity'] = order_quantity * set_quantity * physical_qty
 
             # Price distribution: only first component gets the price
             if idx == 0:

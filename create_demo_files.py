@@ -35,6 +35,7 @@ def create_master_file():
     }
 
     # SETS sheet data - multiple rows for each component
+    # Includes SET_QUANTITY to specify how many of each component in the set
     sets_data = {
         'SET_Name': [
             'Relaxation Bundle',
@@ -45,6 +46,7 @@ def create_master_file():
             'Energy Bundle',
             'Energy Bundle',
             'Energy Bundle',
+            'Complete Wellness Pack',
             'Complete Wellness Pack',
             'Complete Wellness Pack',
             'Complete Wellness Pack',
@@ -66,6 +68,7 @@ def create_master_file():
             'SET-WELLNESS',
             'SET-WELLNESS',
             'SET-WELLNESS',
+            'SET-WELLNESS',
             'SET-WELLNESS'
         ],
         'SKUs_in_SET': [
@@ -82,7 +85,25 @@ def create_master_file():
             'CHAM-10ML',
             'TEA-10ML',
             'PEPP-10ML',
+            'EUCA-10ML',
             'BAG-LG'
+        ],
+        'SET_QUANTITY': [
+            1,  # Relaxation: 1x Lavender
+            1,  # Relaxation: 1x Chamomile
+            1,  # Relaxation: 1x Box
+            1,  # Relaxation: 1x Small bag
+            1,  # Energy: 1x Peppermint
+            1,  # Energy: 1x Eucalyptus
+            1,  # Energy: 1x Box
+            1,  # Energy: 1x Small bag
+            2,  # Wellness: 2x Lavender (example of quantity > 1)
+            1,  # Wellness: 1x Rose
+            1,  # Wellness: 1x Chamomile
+            1,  # Wellness: 1x Tea Tree
+            1,  # Wellness: 1x Peppermint
+            1,  # Wellness: 1x Eucalyptus
+            1   # Wellness: 1x Large bag
         ]
     }
 
@@ -99,6 +120,7 @@ def create_master_file():
     print(f"✓ Created master file: {output_path}")
     print(f"  - PRODUCTS sheet: {len(products_df)} products")
     print(f"  - SETS sheet: {len(sets_df)} set components (3 sets total)")
+    print(f"  - SET_QUANTITY column included for component quantities in sets")
 
 
 def create_orders_export():
