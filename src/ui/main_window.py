@@ -320,23 +320,69 @@ class DecoderToolApp:
         """Create Section 3: Process and Save with enhanced preview"""
         section = ttk.LabelFrame(parent, text=f"{ICONS['preview']} Section 3: Process & Save",
                                 padding=PADDING['large'])
-        section.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=PADDING['small'])
+        section.grid(row=row, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=PADDING['small'])
+        section.columnconfigure(0, weight=1)
 
-        # Preview button (larger and more prominent)
+        # Main action button (larger and centered)
+        button_frame = ttk.Frame(section)
+        button_frame.pack(pady=PADDING['normal'])
+
         preview_btn = create_button_with_icon(
-            section, "Preview & Save Results", ICONS['preview'],
-            self._preview_results, TOOLTIPS['preview_save']
+            button_frame, "Preview & Save Results", ICONS['preview'],
+            self._preview_results, TOOLTIPS['preview_save'],
+            width=25
         )
-        preview_btn.pack(pady=PADDING['small'])
+        preview_btn.pack()
 
         # Help text
         help_label = ttk.Label(
             section,
             text="Process all orders, decode sets, and preview results before saving",
             foreground=COLORS['info'],
-            font=FONTS['small']
+            font=FONTS['default']
         )
-        help_label.pack()
+        help_label.pack(pady=PADDING['tiny'])
+
+        # Info panel with current state
+        info_frame = ttk.Frame(section)
+        info_frame.pack(fill=tk.X, pady=PADDING['normal'], padx=PADDING['xlarge'])
+
+        # Quick stats/info
+        self.process_info_label = ttk.Label(
+            info_frame,
+            text="Load master file and orders to begin processing",
+            foreground=COLORS['default'],
+            font=FONTS['small'],
+            justify=tk.CENTER
+        )
+        self.process_info_label.pack()
+
+    def _update_process_info(self):
+        """Update process section info label with current state"""
+        if hasattr(self, 'process_info_label'):
+            if self.master_loaded and self.orders_loaded:
+                product_count = len(self.product_manager._products)
+                set_count = len(self.set_manager._sets)
+                order_count = len(self.order_processor.get_orders_dataframe())
+
+                info_text = (f"{ICONS['ok']} Ready to process: "
+                           f"{product_count} products, {set_count} sets, {order_count} order rows")
+                self.process_info_label.config(text=info_text, foreground=COLORS['success'])
+            elif self.master_loaded:
+                self.process_info_label.config(
+                    text=f"{ICONS['info']} Master file loaded. Please load orders to continue.",
+                    foreground=COLORS['info']
+                )
+            elif self.orders_loaded:
+                self.process_info_label.config(
+                    text=f"{ICONS['warning']} Orders loaded. Please load master file to continue.",
+                    foreground=COLORS['warning']
+                )
+            else:
+                self.process_info_label.config(
+                    text="Load master file and orders to begin processing",
+                    foreground=COLORS['default']
+                )
 
     def _create_status_bar(self, parent, row):
         """Create enhanced status bar with multiple sections"""
@@ -403,6 +449,7 @@ class DecoderToolApp:
             file_name = Path(file_path).name
             status_text = f"{ICONS['ok']} Master file loaded: {file_name}"
             self.master_status_label.config(text=status_text)
+            self._update_process_info()
             set_status_color(self.master_status_label, 'success')
 
             # Enable reload and pin buttons
@@ -678,6 +725,7 @@ class DecoderToolApp:
 
             self.orders_status_label.config(text=f"{ICONS['ok']} Loaded: {file_name}")
             set_status_color(self.orders_status_label, 'success')
+            self._update_process_info()
 
             self.reload_orders_btn.config(state='normal')
 
@@ -724,6 +772,7 @@ class DecoderToolApp:
 
             self.orders_status_label.config(text=f"{ICONS['ok']} Loaded {file_count} files from folder")
             set_status_color(self.orders_status_label, 'success')
+            self._update_process_info()
 
             self.reload_orders_btn.config(state='normal')
 
@@ -846,7 +895,8 @@ class DecoderToolApp:
                 return
 
             # Show preview of changes
-            changes_text = "\n".join([f"{name} → {sku}" for name, sku in changes[:20]])
+            changes_text = "\n".join([f"{change['name']} → {change['new_sku']}"
+                                     for change in changes[:20]])
             if len(changes) > 20:
                 changes_text += f"\n\n... and {len(changes) - 20} more"
 
@@ -944,12 +994,12 @@ class DecoderToolApp:
         return issues
 
     def _show_validation_report(self, issues: dict):
-        """Show validation report window"""
+        """Show validation report window with enhanced UI"""
         from tkinter import scrolledtext
 
         report_window = tk.Toplevel(self.root)
         report_window.title(f"{ICONS['validate']} Validation Report")
-        report_window.geometry(WINDOW_SIZES['validation'])
+        report_window.geometry("900x650")  # Wider and taller
         report_window.transient(self.root)
 
         # Header
@@ -1026,6 +1076,14 @@ class DecoderToolApp:
         button_frame = ttk.Frame(report_window, padding=PADDING['normal'])
         button_frame.pack(fill=tk.X)
 
+        def copy_report():
+            """Copy validation report to clipboard"""
+            report_window.clipboard_clear()
+            report_window.clipboard_append(report_text)
+            info_dialog(report_window, "Copied", "Validation report copied to clipboard")
+
+        ttk.Button(button_frame, text=f"{ICONS['copy']} Copy Report",
+                  command=copy_report).pack(side=tk.LEFT, padx=PADDING['small'])
         ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side=tk.RIGHT)
 
         # Update status

@@ -8,7 +8,7 @@ COLORS = {
     'info': '#17a2b8',     # Blue
     'default': '#6c757d',  # Gray
     'primary': '#007bff',  # Primary blue
-    'decoded_set': '#e3f2fd',  # Light blue for decoded sets
+    'decoded_set': '#d4edda',  # Light green (салатовий) for decoded sets
 }
 
 # Icons using Unicode emojis

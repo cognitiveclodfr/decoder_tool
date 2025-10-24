@@ -304,6 +304,18 @@ class PreviewWindow:
         )
 
         self.context_menu.add_command(
+            label=f"{ICONS['copy']} Copy Order ID",
+            command=self._copy_order_id
+        )
+
+        self.context_menu.add_command(
+            label=f"{ICONS['copy']} Copy SKU",
+            command=self._copy_sku
+        )
+
+        self.context_menu.add_separator()
+
+        self.context_menu.add_command(
             label=f"{ICONS['delete']} Delete Row",
             command=self._delete_selected_rows
         )
@@ -440,7 +452,7 @@ class PreviewWindow:
         return [int(self.tree.item(item)['tags'][0]) for item in selection]
 
     def _show_row_details(self, event):
-        """Show full details for selected row"""
+        """Show full details for selected row with enhanced UI"""
         indices = self._get_selected_indices()
         if not indices:
             return
@@ -451,7 +463,7 @@ class PreviewWindow:
         # Create detail window
         detail_window = tk.Toplevel(self.window)
         detail_window.title(f"{ICONS['details']} Row Details")
-        detail_window.geometry("650x550")
+        detail_window.geometry("750x600")  # Wider and taller
         detail_window.transient(self.window)
 
         # Create text widget with scrollbar
@@ -465,28 +477,63 @@ class PreviewWindow:
 
         # Populate with row data
         text_widget.insert(tk.END, "ROW DETAILS\n", 'title')
-        text_widget.insert(tk.END, "=" * 60 + "\n\n", 'separator')
+        text_widget.insert(tk.END, "=" * 70 + "\n\n", 'separator')
 
+        # Add status indicators
+        status_parts = []
+        if row_idx in self.decoded_rows:
+            status_parts.append(f"{ICONS['ok']} Decoded Set Component")
+        if row_idx in self.important_rows:
+            status_parts.append(f"{ICONS['important']} Marked as Important")
+        if row_idx in self.row_notes:
+            status_parts.append(f"{ICONS['note']} Has Note")
+
+        if status_parts:
+            text_widget.insert(tk.END, "STATUS: ", 'bold')
+            text_widget.insert(tk.END, " | ".join(status_parts) + "\n\n", 'status')
+            text_widget.insert(tk.END, "-" * 70 + "\n\n", 'separator')
+
+        # Add all column data
         for col, value in row_data.items():
             text_widget.insert(tk.END, f"{col}:\n", 'bold')
             text_widget.insert(tk.END, f"  {value}\n\n")
 
         # Add note if exists
         if row_idx in self.row_notes:
-            text_widget.insert(tk.END, "\nNOTE:\n", 'bold')
+            text_widget.insert(tk.END, "-" * 70 + "\n", 'separator')
+            text_widget.insert(tk.END, f"\n{ICONS['note']} NOTE:\n", 'bold')
             text_widget.insert(tk.END, f"  {self.row_notes[row_idx]}\n", 'note')
 
         # Configure tags
         text_widget.tag_configure('title', font=FONTS['heading'], foreground=COLORS['primary'])
         text_widget.tag_configure('separator', foreground=COLORS['default'])
         text_widget.tag_configure('bold', font=FONTS['bold'])
+        text_widget.tag_configure('status', foreground=COLORS['info'], font=FONTS['default'])
         text_widget.tag_configure('note', foreground=COLORS['warning'], font=FONTS['default'])
 
         text_widget.configure(state='disabled')
 
-        # Close button
+        # Build text for clipboard
+        details_text = f"ROW DETAILS\n{'=' * 70}\n\n"
+        if status_parts:
+            details_text += f"STATUS: {' | '.join(status_parts)}\n{'-' * 70}\n\n"
+        for col, value in row_data.items():
+            details_text += f"{col}:\n  {value}\n\n"
+        if row_idx in self.row_notes:
+            details_text += f"{'-' * 70}\nNOTE:\n  {self.row_notes[row_idx]}\n"
+
+        # Buttons
         button_frame = ttk.Frame(detail_window, padding=(PADDING['normal'], 0))
         button_frame.pack(fill=tk.X)
+
+        def copy_details():
+            """Copy row details to clipboard"""
+            detail_window.clipboard_clear()
+            detail_window.clipboard_append(details_text)
+            info_dialog(detail_window, "Copied", "Row details copied to clipboard")
+
+        ttk.Button(button_frame, text=f"{ICONS['copy']} Copy Details",
+                  command=copy_details).pack(side=tk.LEFT, padx=PADDING['small'])
         ttk.Button(button_frame, text="Close", command=detail_window.destroy).pack(side=tk.RIGHT)
 
     def _copy_selected_row(self):
@@ -505,6 +552,44 @@ class PreviewWindow:
         self.window.clipboard_append(clipboard_text)
 
         info_dialog(self.window, "Copied", "Row data copied to clipboard")
+
+    def _copy_order_id(self):
+        """Copy Order ID from selected row to clipboard"""
+        indices = self._get_selected_indices()
+        if not indices:
+            return
+
+        row_idx = indices[0]
+        row_data = self.original_df.iloc[row_idx]
+
+        # Get Order ID (column 'Name')
+        order_id = str(row_data.get('Name', ''))
+
+        if order_id:
+            self.window.clipboard_clear()
+            self.window.clipboard_append(order_id)
+            info_dialog(self.window, "Copied", f"Order ID copied: {order_id}")
+        else:
+            error_dialog(self.window, "Error", "Order ID not found in selected row")
+
+    def _copy_sku(self):
+        """Copy SKU from selected row to clipboard"""
+        indices = self._get_selected_indices()
+        if not indices:
+            return
+
+        row_idx = indices[0]
+        row_data = self.original_df.iloc[row_idx]
+
+        # Get SKU (column 'Lineitem sku')
+        sku = str(row_data.get('Lineitem sku', ''))
+
+        if sku:
+            self.window.clipboard_clear()
+            self.window.clipboard_append(sku)
+            info_dialog(self.window, "Copied", f"SKU copied: {sku}")
+        else:
+            error_dialog(self.window, "Error", "SKU not found in selected row")
 
     def _delete_selected_rows(self):
         """Delete selected rows with undo support"""
