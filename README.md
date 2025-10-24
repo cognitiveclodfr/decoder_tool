@@ -15,6 +15,16 @@ This tool helps e-commerce businesses that sell product bundles (sets) to proper
 - **Smart Price Distribution**: First component in a set receives the full price
 - **Flexible Architecture**: Easy to adapt for different stores by changing master files
 
+### New in v2.0! 🎉
+
+- **Auto SKU Generation**: Automatically generates SKUs from product names for items without SKU (testers, samples)
+- **Interactive Preview Table**: View, search, filter, and sort all processed data before saving
+- **Data Validation**: Pre-processing validation to catch issues early
+- **Processing Statistics**: Detailed summary of what was processed
+- **Search & Filter**: Find specific orders or products in preview
+- **Export Selected Rows**: Save only the rows you need
+- **Copy to Clipboard**: Paste data directly into Excel or other tools
+
 ## Installation
 
 ### Option 1: Download Pre-built Executable (Easiest)
@@ -115,13 +125,41 @@ The product will be added to the order with:
 - Name from the product map (or SKU if not found)
 - Price and discount set to 0 to avoid duplication
 
-#### 4. Process and Save
+#### 4. Data Processing Utilities (New!)
 
-Click **"Process and Save As..."** to:
+Before processing, use these utilities to ensure data quality:
+
+**Generate Missing SKUs:**
+- Automatically generates SKUs for products with empty SKU fields
+- Converts product name to SKU format (e.g., "Barrier Cream Sample" → "BARRIER_CREAM_SAMPLE")
+- Perfect for testers, samples, or other products without SKUs
+- Shows you all generated SKUs before applying
+
+**Validate Data:**
+- Checks for potential issues before processing
+- Warns about empty SKUs, incomplete sets, and other problems
+- Helps prevent errors and ensures smooth processing
+
+#### 5. Preview & Save Results
+
+Click **"Preview & Save Results"** to:
 
 1. Process all orders
 2. Decode sets into individual components
-3. Save the processed CSV file
+3. **Preview results in interactive table** (New!)
+   - View all processed data before saving
+   - Search and filter by any column
+   - Filter by specific order ID
+   - Sort by clicking column headers
+   - Double-click row for full details
+   - Export selected rows only
+   - Copy to clipboard for Excel
+4. Save the processed CSV file
+
+**Processing Statistics** displayed in preview:
+- Original vs. processed row counts
+- Number of unique orders and SKUs
+- Sets decoded count
 
 **Processing Logic:**
 
@@ -204,6 +242,32 @@ python create_demo_files.py
   - 2x BOX-RELAX @ $0.00
 
 This ensures your inventory system deducts 2 units each of Lavender Oil, Rose Oil, and Gift Box, while maintaining the correct total order value of $49.99.
+
+### Example: Auto SKU Generation
+
+**Input (products without SKU):**
+```
+Lineitem name: "Barrier Cream Sample"
+Lineitem sku: (empty)
+
+Lineitem name: "Face Oil Sample"
+Lineitem sku: (empty)
+```
+
+**After clicking "Generate Missing SKUs":**
+```
+Lineitem name: "Barrier Cream Sample"
+Lineitem sku: "BARRIER_CREAM_SAMPLE"
+
+Lineitem name: "Face Oil Sample"
+Lineitem sku: "FACE_OIL_SAMPLE"
+```
+
+The tool automatically:
+- Converts to uppercase
+- Replaces spaces with underscores
+- Removes special characters
+- Handles multiple spaces correctly
 
 ## Technical Details
 

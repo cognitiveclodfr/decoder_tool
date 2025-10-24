@@ -227,3 +227,82 @@ class TestOrderProcessor:
 
         # df2 should be unchanged
         assert df2.iloc[0, 0] != 'MODIFIED'
+
+    def test_generate_missing_skus_basic(self, order_processor):
+        """Test basic SKU generation for empty SKUs"""
+        # Create orders with empty SKUs
+        orders_df = pd.DataFrame({
+            'Name': ['#1', '#1'],
+            'Lineitem name': ['Barrier Cream Sample', 'Face Oil Sample'],
+            'Lineitem sku': ['', ''],
+            'Lineitem quantity': [1, 1],
+            'Lineitem price': [0, 0]
+        })
+
+        order_processor.load_orders(orders_df)
+        count, changes = order_processor.generate_missing_skus()
+
+        assert count == 2
+        assert len(changes) == 2
+
+        # Check generated SKUs
+        df = order_processor.get_orders_dataframe()
+        assert df.iloc[0]['Lineitem sku'] == 'BARRIER_CREAM_SAMPLE'
+        assert df.iloc[1]['Lineitem sku'] == 'FACE_OIL_SAMPLE'
+
+    def test_generate_missing_skus_no_empty(self, order_processor, sample_orders_df):
+        """Test SKU generation when no empty SKUs exist"""
+        order_processor.load_orders(sample_orders_df)
+        count, changes = order_processor.generate_missing_skus()
+
+        assert count == 0
+        assert len(changes) == 0
+
+    def test_generate_missing_skus_mixed(self, order_processor):
+        """Test SKU generation with mix of empty and filled SKUs"""
+        orders_df = pd.DataFrame({
+            'Name': ['#1', '#1', '#1'],
+            'Lineitem name': ['Product 1', 'Tester Sample', 'Product 3'],
+            'Lineitem sku': ['PROD-1', '', 'PROD-3'],
+            'Lineitem quantity': [1, 1, 1],
+            'Lineitem price': [10, 0, 15]
+        })
+
+        order_processor.load_orders(orders_df)
+        count, changes = order_processor.generate_missing_skus()
+
+        assert count == 1
+        assert len(changes) == 1
+        assert changes[0]['name'] == 'Tester Sample'
+        assert changes[0]['new_sku'] == 'TESTER_SAMPLE'
+
+        # Check that other SKUs are unchanged
+        df = order_processor.get_orders_dataframe()
+        assert df.iloc[0]['Lineitem sku'] == 'PROD-1'
+        assert df.iloc[1]['Lineitem sku'] == 'TESTER_SAMPLE'
+        assert df.iloc[2]['Lineitem sku'] == 'PROD-3'
+
+    def test_generate_missing_skus_special_characters(self, order_processor):
+        """Test SKU generation handles special characters"""
+        orders_df = pd.DataFrame({
+            'Name': ['#1'],
+            'Lineitem name': ['Product & Sample (Test)'],
+            'Lineitem sku': [''],
+            'Lineitem quantity': [1],
+            'Lineitem price': [0]
+        })
+
+        order_processor.load_orders(orders_df)
+        count, changes = order_processor.generate_missing_skus()
+
+        assert count == 1
+        df = order_processor.get_orders_dataframe()
+        # Special characters should be removed
+        assert df.iloc[0]['Lineitem sku'] == 'PRODUCT_SAMPLE_TEST'
+
+    def test_generate_missing_skus_no_orders_loaded(self, order_processor):
+        """Test SKU generation when no orders are loaded"""
+        count, changes = order_processor.generate_missing_skus()
+
+        assert count == 0
+        assert len(changes) == 0
