@@ -15,7 +15,13 @@ This tool helps e-commerce businesses that sell product bundles (sets) to proper
 - **Smart Price Distribution**: First component in a set receives the full price
 - **Flexible Architecture**: Easy to adapt for different stores by changing master files
 
-### New in v2.0! 🎉
+### New in v2.1! 🎉
+
+- **SET_QUANTITY Support**: Handle sets with multiple quantities of the same component (e.g., 2x Barrier Cream in one bundle)
+- **Multi-CSV Loading**: Load single CSV file OR load entire folder with multiple CSV files at once
+- **Enhanced Flexibility**: Backward compatible - works with or without SET_QUANTITY column
+
+### v2.0 Features
 
 - **Auto SKU Generation**: Automatically generates SKUs from product names for items without SKU (testers, samples)
 - **Interactive Preview Table**: View, search, filter, and sort all processed data before saving
@@ -83,6 +89,7 @@ Click **"Load Master File (.xlsx)"** and select your master file containing:
   - `SET_Name`: Set display name
   - `SET_SKU`: Set SKU (unique identifier)
   - `SKUs_in_SET`: Component SKU (one row per component)
+  - `SET_QUANTITY`: Quantity of this component in the set (optional, defaults to 1)
 
 **Example Master File Structure:**
 
@@ -94,17 +101,29 @@ Click **"Load Master File (.xlsx)"** and select your master file containing:
 | Gift Box | BOX-RELAX | 1 |
 
 *SETS Sheet:*
-| SET_Name | SET_SKU | SKUs_in_SET |
-|----------|---------|-------------|
-| Relaxation Bundle | SET-RELAX | LAV-10ML |
-| Relaxation Bundle | SET-RELAX | ROSE-10ML |
-| Relaxation Bundle | SET-RELAX | BOX-RELAX |
+| SET_Name | SET_SKU | SKUs_in_SET | SET_QUANTITY |
+|----------|---------|-------------|--------------|
+| Relaxation Bundle | SET-RELAX | LAV-10ML | 1 |
+| Relaxation Bundle | SET-RELAX | ROSE-10ML | 1 |
+| Relaxation Bundle | SET-RELAX | BOX-RELAX | 1 |
+| Barrier Bundle | SET-BARRIER | BARRIER-CREAM | 2 |
+| Barrier Bundle | SET-BARRIER | BOX-SMALL | 1 |
+
+**Note**: In the Barrier Bundle example, ordering 1x set will result in 2x BARRIER-CREAM and 1x BOX-SMALL being deducted from inventory.
 
 #### 2. Load Orders Export
 
-Click **"Load Orders Export (.csv)"** and select your Shopify order export CSV file.
+You have two options for loading orders:
 
-The file should contain standard Shopify export columns including:
+**Option A: Load Single CSV File**
+- Click **"Load Single CSV File"** and select your Shopify order export CSV file
+
+**Option B: Load Folder with Multiple CSV Files** (New in v2.1!)
+- Click **"Load Folder with CSV Files"** and select a folder containing multiple CSV files
+- All CSV files in the folder will be combined and processed together
+- Perfect for processing multiple order exports at once
+
+The file(s) should contain standard Shopify export columns including:
 - `Name` (Order ID, e.g., #76360)
 - `Lineitem sku`
 - `Lineitem quantity`

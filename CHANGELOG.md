@@ -2,6 +2,74 @@
 
 All notable changes to Decoder Tool will be documented in this file.
 
+## [2.1.0] - 2025-10-24
+
+### 🎉 Minor Release: SET_QUANTITY Support & Multi-CSV Loading
+
+This release adds support for sets with multiple quantities of the same component and the ability to load multiple CSV files at once.
+
+### ✨ Added
+
+#### SET_QUANTITY Column Support
+- **New optional column** `SET_QUANTITY` in SETS sheet
+- Allows sets to contain multiple quantities of the same component
+  - Example: A set with 2x Barrier Cream and 1x Box
+- **Backward compatible** - defaults to quantity 1 if column not present
+- Works with existing master files without modification
+- Quantity calculation formula: `order_quantity × set_quantity × physical_qty`
+- Example use case:
+  ```
+  SET_Name: Barrier Bundle
+  SET_SKU: SET-BARRIER
+  Components:
+    - BARRIER-CREAM (SET_QUANTITY: 2)
+    - BOX-SMALL (SET_QUANTITY: 1)
+
+  Order: 3x Barrier Bundle → Results in:
+    - 6x BARRIER-CREAM (3 × 2 × 1)
+    - 3x BOX-SMALL (3 × 1 × 1)
+  ```
+
+#### Multi-CSV Loading
+- **Load folder with multiple CSV files** at once
+- New "Load Folder with CSV Files" button in GUI
+- All CSV files in selected folder are automatically combined
+- Files are sorted alphabetically before combining
+- Shows detailed message with all loaded file names
+- Perfect for processing multiple order exports in one go
+- **Still supports single file loading** - choose what works best for you
+
+### 🔧 Changed
+- GUI now has two separate buttons:
+  - "Load Single CSV File" (existing functionality)
+  - "Load Folder with CSV Files" (new)
+- SetManager.get_components() now returns `List[Dict[str, any]]` instead of `List[str]`
+  - Each dict contains: `{'sku': str, 'quantity': int}`
+- OrderProcessor._decode_set() updated to use set_quantity from components
+- Demo files updated to include SET_QUANTITY column examples
+
+### 📊 Testing
+- Added 3 new tests for SET_QUANTITY in test_set_manager.py
+- Added 2 new tests for SET_QUANTITY with order processing
+- Created new test_file_handlers.py with 9 tests for multi-CSV loading
+- Updated existing tests to work with new dict-based component format
+- Total tests increased from 69 to 83
+- All tests passing (100% success rate)
+
+### 📝 Documentation
+- Updated README with v2.1 features
+- Added SET_QUANTITY column to master file documentation
+- Added multi-CSV loading instructions
+- Added example showing Barrier Bundle with SET_QUANTITY
+- Updated CHANGELOG with v2.1 changes
+
+### 🔄 Compatibility
+- **Fully backward compatible** with v2.0 master files
+- Master files without SET_QUANTITY column work unchanged
+- All existing functionality preserved
+
+---
+
 ## [2.0.0] - 2025-10-24
 
 ### 🎉 Major Release: Enhanced User Experience & Auto SKU Generation

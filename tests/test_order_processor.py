@@ -306,3 +306,108 @@ class TestOrderProcessor:
 
         assert count == 0
         assert len(changes) == 0
+
+    def test_decode_set_with_set_quantity(self, product_manager):
+        """Test set decoding with SET_QUANTITY support"""
+        # Create set with different component quantities
+        sm = SetManager()
+        sets_df = pd.DataFrame({
+            'SET_Name': ['Wellness Pack', 'Wellness Pack', 'Wellness Pack'],
+            'SET_SKU': ['SET-WELLNESS', 'SET-WELLNESS', 'SET-WELLNESS'],
+            'SKUs_in_SET': ['LAV-10ML', 'CHAM-10ML', 'BOX-RELAX'],
+            'SET_QUANTITY': [2, 1, 1]  # 2x Lavender, 1x Chamomile, 1x Box
+        })
+        sm.load_from_dataframe(sets_df)
+
+        op = OrderProcessor(product_manager, sm)
+
+        orders_df = pd.DataFrame({
+            'Name': ['#001'],
+            'Email': ['test@example.com'],
+            'Lineitem quantity': [1],  # 1x set ordered
+            'Lineitem name': ['Wellness Pack'],
+            'Lineitem sku': ['SET-WELLNESS'],
+            'Lineitem price': [89.99],
+            'Lineitem discount': [0],
+            'Shipping Name': ['Test User'],
+            'Shipping Street': ['123 Test St'],
+            'Shipping City': ['Test City'],
+            'Shipping Zip': ['12345'],
+            'Shipping Province': ['TS'],
+            'Shipping Country': ['Test']
+        })
+
+        op.load_orders(orders_df)
+        processed_df = op.process_orders()
+
+        # Should create 3 rows (3 components)
+        assert len(processed_df) == 3
+
+        # Find each component
+        lav_rows = processed_df[processed_df['Lineitem sku'] == 'LAV-10ML']
+        cham_rows = processed_df[processed_df['Lineitem sku'] == 'CHAM-10ML']
+        box_rows = processed_df[processed_df['Lineitem sku'] == 'BOX-RELAX']
+
+        # Lavender should have quantity 2 (1 order × 2 set_quantity × 1 physical_qty)
+        assert len(lav_rows) == 1
+        assert lav_rows.iloc[0]['Lineitem quantity'] == 2
+
+        # Chamomile should have quantity 1 (1 order × 1 set_quantity × 1 physical_qty)
+        assert len(cham_rows) == 1
+        assert cham_rows.iloc[0]['Lineitem quantity'] == 1
+
+        # Box should have quantity 1 (1 order × 1 set_quantity × 1 physical_qty)
+        assert len(box_rows) == 1
+        assert box_rows.iloc[0]['Lineitem quantity'] == 1
+
+        # First component (Lavender) should get full price, others $0
+        assert lav_rows.iloc[0]['Lineitem price'] == 89.99
+        assert cham_rows.iloc[0]['Lineitem price'] == 0.0
+        assert box_rows.iloc[0]['Lineitem price'] == 0.0
+
+    def test_decode_set_with_set_quantity_multiple_orders(self, product_manager):
+        """Test set decoding with SET_QUANTITY and order quantity > 1"""
+        sm = SetManager()
+        sets_df = pd.DataFrame({
+            'SET_Name': ['Barrier Bundle', 'Barrier Bundle'],
+            'SET_SKU': ['SET-BARRIER', 'SET-BARRIER'],
+            'SKUs_in_SET': ['CHAM-10ML', 'BOX-RELAX'],
+            'SET_QUANTITY': [2, 1]  # 2x Chamomile, 1x Box
+        })
+        sm.load_from_dataframe(sets_df)
+
+        op = OrderProcessor(product_manager, sm)
+
+        orders_df = pd.DataFrame({
+            'Name': ['#002'],
+            'Email': ['test@example.com'],
+            'Lineitem quantity': [3],  # 3x sets ordered
+            'Lineitem name': ['Barrier Bundle'],
+            'Lineitem sku': ['SET-BARRIER'],
+            'Lineitem price': [75.00],
+            'Lineitem discount': [0],
+            'Shipping Name': ['Test User'],
+            'Shipping Street': ['123 Test St'],
+            'Shipping City': ['Test City'],
+            'Shipping Zip': ['12345'],
+            'Shipping Province': ['TS'],
+            'Shipping Country': ['Test']
+        })
+
+        op.load_orders(orders_df)
+        processed_df = op.process_orders()
+
+        # Should create 2 rows (2 components)
+        assert len(processed_df) == 2
+
+        # Find each component
+        cham_rows = processed_df[processed_df['Lineitem sku'] == 'CHAM-10ML']
+        box_rows = processed_df[processed_df['Lineitem sku'] == 'BOX-RELAX']
+
+        # Chamomile: 3 orders × 2 set_quantity × 1 physical_qty = 6
+        assert len(cham_rows) == 1
+        assert cham_rows.iloc[0]['Lineitem quantity'] == 6
+
+        # Box: 3 orders × 1 set_quantity × 1 physical_qty = 3
+        assert len(box_rows) == 1
+        assert box_rows.iloc[0]['Lineitem quantity'] == 3
