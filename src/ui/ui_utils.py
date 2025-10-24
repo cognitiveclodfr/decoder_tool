@@ -23,15 +23,17 @@ class ToolTip:
             delay: Delay in milliseconds before showing tooltip
         """
         self.widget = widget
-        self.text = text
+        # Strip whitespace and ensure text is valid
+        self.text = text.strip() if text else ""
         self.delay = delay
         self.tooltip_window = None
         self.after_id = None
 
-        # Bind events
-        self.widget.bind('<Enter>', self._on_enter)
-        self.widget.bind('<Leave>', self._on_leave)
-        self.widget.bind('<Button>', self._on_leave)
+        # Only bind events if we have valid text
+        if self.text:
+            self.widget.bind('<Enter>', self._on_enter)
+            self.widget.bind('<Leave>', self._on_leave)
+            self.widget.bind('<Button>', self._on_leave)
 
     def _on_enter(self, event=None):
         """Handle mouse enter event"""
