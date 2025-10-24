@@ -5,18 +5,19 @@ from typing import Tuple, Optional, List
 
 
 class MasterFileLoader:
-    """Handles loading of master XLSX files with PRODUCTS and SETS sheets"""
+    """Handles loading of master XLSX files with PRODUCTS, SETS, and optionally ADDITION sheets"""
 
     @staticmethod
-    def load(file_path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def load(file_path: str) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
         """
-        Load master file with PRODUCTS and SETS sheets
+        Load master file with PRODUCTS, SETS, and optionally ADDITION sheets
 
         Args:
             file_path: Path to XLSX file
 
         Returns:
-            Tuple of (products_df, sets_df)
+            Tuple of (products_df, sets_df, additions_df)
+            additions_df will be None if ADDITION sheet doesn't exist
 
         Raises:
             FileNotFoundError: If file doesn't exist
@@ -32,11 +33,16 @@ class MasterFileLoader:
             if 'SETS' not in excel_file.sheet_names:
                 raise ValueError("Missing required sheet: SETS")
 
-            # Load sheets
+            # Load required sheets
             products_df = pd.read_excel(excel_file, sheet_name='PRODUCTS')
             sets_df = pd.read_excel(excel_file, sheet_name='SETS')
 
-            return products_df, sets_df
+            # Load optional ADDITION sheet
+            additions_df = None
+            if 'ADDITION' in excel_file.sheet_names:
+                additions_df = pd.read_excel(excel_file, sheet_name='ADDITION')
+
+            return products_df, sets_df, additions_df
 
         except FileNotFoundError:
             raise FileNotFoundError(f"File not found: {file_path}")

@@ -30,7 +30,7 @@ class TestIntegration:
         """Test complete workflow from loading to processing"""
 
         # Step 1: Load master file
-        products_df, sets_df = MasterFileLoader.load(str(master_file_path))
+        products_df, sets_df, additions_df = MasterFileLoader.load(str(master_file_path))
 
         assert len(products_df) > 0
         assert len(sets_df) > 0
@@ -93,7 +93,7 @@ class TestIntegration:
         """Test specific details of set decoding"""
 
         # Setup
-        products_df, sets_df = MasterFileLoader.load(str(master_file_path))
+        products_df, sets_df, additions_df = MasterFileLoader.load(str(master_file_path))
         product_manager = ProductManager()
         set_manager = SetManager()
         product_manager.load_from_dataframe(products_df)
@@ -141,7 +141,7 @@ class TestIntegration:
         """Test that price is correctly distributed to first component only"""
 
         # Setup
-        products_df, sets_df = MasterFileLoader.load(str(master_file_path))
+        products_df, sets_df, additions_df = MasterFileLoader.load(str(master_file_path))
         product_manager = ProductManager()
         set_manager = SetManager()
         product_manager.load_from_dataframe(products_df)
@@ -181,7 +181,7 @@ class TestIntegration:
         """Test that regular (non-set) products pass through unchanged"""
 
         # Setup
-        products_df, sets_df = MasterFileLoader.load(str(master_file_path))
+        products_df, sets_df, additions_df = MasterFileLoader.load(str(master_file_path))
         product_manager = ProductManager()
         set_manager = SetManager()
         product_manager.load_from_dataframe(products_df)
