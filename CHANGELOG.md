@@ -2,6 +2,28 @@
 
 All notable changes to Decoder Tool will be documented in this file.
 
+## [2.2.1] - 2025-10-24
+
+### 🐛 Bug Fixes
+- **Fixed critical bug**: "'ProductManager' object has no attribute '_products'" error when loading master file
+  - Changed from accessing private attributes `_products` and `_sets` to using public `count()` methods
+  - Added null-safety check for `get_orders_dataframe()` return value
+  - UI now uses proper public API instead of internal implementation details
+
+### ✅ Testing & Stability
+- **Added comprehensive UI stability tests** (15 new tests, 98 total)
+  - Test ProductManager public API methods (count, get_all_skus, has_product)
+  - Test SetManager public API methods (count, get_all_set_skus, is_set)
+  - Test OrderProcessor public API methods (get_orders_dataframe, process_orders, generate_missing_skus)
+  - Integration tests for typical UI workflows
+  - Tests specifically for the `_update_process_info()` scenario that was failing
+- All 98 tests pass successfully
+
+### 📝 Technical Details
+- `_update_process_info()` now safely accesses manager data through public methods
+- Proper handling of None returns from `get_orders_dataframe()`
+- Better encapsulation: UI layer no longer depends on internal implementation
+
 ## [2.2.0] - 2025-10-24
 
 ### 🎉 Major Release: Complete UI/UX Overhaul

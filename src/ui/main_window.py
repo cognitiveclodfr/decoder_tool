@@ -361,9 +361,10 @@ class DecoderToolApp:
         """Update process section info label with current state"""
         if hasattr(self, 'process_info_label'):
             if self.master_loaded and self.orders_loaded:
-                product_count = len(self.product_manager._products)
-                set_count = len(self.set_manager._sets)
-                order_count = len(self.order_processor.get_orders_dataframe())
+                product_count = self.product_manager.count()
+                set_count = self.set_manager.count()
+                orders_df = self.order_processor.get_orders_dataframe()
+                order_count = len(orders_df) if orders_df is not None else 0
 
                 info_text = (f"{ICONS['ok']} Ready to process: "
                            f"{product_count} products, {set_count} sets, {order_count} order rows")

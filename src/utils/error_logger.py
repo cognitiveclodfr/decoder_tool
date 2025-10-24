@@ -189,7 +189,7 @@ class CrashRecovery:
         """
         try:
             state['timestamp'] = datetime.now().isoformat()
-            state['version'] = '2.2.0'
+            state['version'] = '2.2.1'
 
             with open(self.recovery_file, 'w', encoding='utf-8') as f:
                 json.dump(state, f, indent=2)
