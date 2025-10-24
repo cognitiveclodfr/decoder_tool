@@ -2,6 +2,126 @@
 
 All notable changes to Decoder Tool will be documented in this file.
 
+## [2.2.0] - 2025-10-24
+
+### 🎉 Major Release: Complete UI/UX Overhaul
+
+This is a comprehensive UI/UX upgrade that transforms the application into a professional-grade tool with extensive usability improvements, visual enhancements, and power-user features.
+
+### ✨ Main Window Enhancements
+
+#### Visual Improvements
+- **Icons on all buttons** - Every button now has an intuitive emoji icon (📁 Load, 💾 Save, ✅ Preview, 🔄 Process, etc.)
+- **Tooltips everywhere** - Hover over any button or field to see helpful explanations
+- **Color-coded status messages** - Green for success, yellow for warnings, red for errors
+- **Better spacing and grouping** - More "airy" design with improved visual hierarchy
+- **Enhanced status bar** - 3-section layout (status | info | counter) with real-time updates
+
+#### File Management
+- **Pin/Unpin favorite master files** - Quick access to frequently used files
+- **Recent files menu** - Separate sections for favorites and recent files
+- **Reload/Refresh functionality** - Quickly reload current files to get latest changes
+- **File history tracking** - Automatically remembers last 10 files with timestamps
+- **Context menu for master file** - Right-click options: Reload, View Info, Open Location
+
+#### Data Validation & Quality
+- **Enhanced validation** - Comprehensive pre-flight check before processing
+- **Validation report window** - Categorized warnings (Critical/Warning/Info)
+- **Orphaned SKUs detection** - Find SKUs not in master file
+- **Duplicate detection** - Find duplicate orders or SKUs
+- **Pre-processing checks** - Catch issues early before they cause problems
+
+#### Reliability & Safety
+- **Crash recovery** - Automatic state saving every 60 seconds
+- **Error logging** - Detailed logs saved to ~/.decoder_tool/logs/
+- **Auto-save** - Application state preserved across sessions
+- **Session restore** - Option to restore previous session after crash
+- **Log rotation** - Automatic cleanup of old log files (7-day retention)
+
+### ✨ Preview Window Enhancements
+
+#### Interactive Features
+- **Right-click context menu** with rich operations:
+  - 📋 Copy row data
+  - 🗑️ Delete row
+  - 📝 View full details
+  - 🔴 Mark as important
+  - 💬 Add/edit notes
+- **Undo/Redo support** - Ctrl+Z and Ctrl+Y keyboard shortcuts
+- **Bulk operations** - Delete multiple selected rows at once
+- **Keyboard shortcuts** - Del key for delete, Ctrl+Z/Y for undo/redo
+
+#### Visual Indicators
+- **Decoded sets highlighted** - Light blue background for decoded set components
+- **Important rows** - Red bold text for marked rows
+- **Rows with notes** - Yellow text with 💬 note indicator
+- **Legend toolbar** - Shows meaning of all visual indicators
+
+#### Enhanced UI
+- **Toolbar with action buttons** - Undo, Redo, Delete Selected buttons
+- **Sort direction indicators** - Visual ↑↓ arrows show current sort
+- **Better search** - Improved filtering with visual feedback
+- **Enhanced row details** - Scrollable window with formatted display
+
+### 🔧 Technical Improvements
+
+#### New Infrastructure
+- **UI Constants module** (`ui_constants.py`) - Centralized icons, colors, tooltips, fonts
+- **UI Utils module** (`ui_utils.py`) - Reusable components (ToolTip, StatusBar, dialogs)
+- **File History module** (`file_history.py`) - Recent files and favorites management
+- **Error Logger module** (`error_logger.py`) - Professional error logging and crash recovery
+
+#### Code Quality
+- All UI components use consistent styling
+- Better error handling throughout
+- Improved code organization and modularity
+- Type hints for better code maintainability
+
+### 📊 User Experience Summary
+
+Before v2.2:
+- Basic functional interface
+- Limited visual feedback
+- No error recovery
+- Manual file management
+
+After v2.2:
+- Professional, polished interface
+- Rich visual feedback and color coding
+- Automatic crash recovery and error logging
+- Intelligent file management with favorites
+- Context menus and keyboard shortcuts
+- Undo/Redo for safety
+- Visual indicators for data clarity
+
+### 🎯 Features Checklist
+
+- ✅ 1.1: Icons, tooltips, spacing, color-coding
+- ✅ 1.2: Enhanced status bar with counters
+- ✅ 2.1: Pin favorites, reload/refresh
+- ✅ 2.2: Duplicate detection, Undo/Redo, bulk operations
+- ✅ 3.1: Right-click context menus
+- ✅ 4.1: Enhanced validation with detailed report
+- ✅ 6.1: Visual indicators for decoded sets
+- ✅ 7.1: Crash recovery and error logging
+
+### 🔄 Compatibility
+- **Fully backward compatible** with v2.0 and v2.1
+- All existing files and workflows continue to work
+- No breaking changes to data formats
+- Optional features don't require migration
+
+### 📁 File Structure Updates
+```
+~/.decoder_tool/
+├── logs/               # Error logs (auto-created)
+├── recovery/           # Crash recovery states
+└── history.json        # Recent files
+    favorites.json      # Pinned favorites
+```
+
+---
+
 ## [2.1.0] - 2025-10-24
 
 ### 🎉 Minor Release: SET_QUANTITY Support & Multi-CSV Loading

@@ -8,14 +8,37 @@ This tool helps e-commerce businesses that sell product bundles (sets) to proper
 
 ## Key Features
 
-- **GUI Interface**: Easy-to-use tkinter-based graphical interface
-- **Master File Management**: Load product and set definitions from XLSX files
-- **Order Processing**: Automatically decode sets into components
-- **Manual Product Addition**: Add products to existing orders
+- **Professional GUI Interface**: Modern, intuitive interface with icons, tooltips, and color-coded feedback
+- **Master File Management**: Load product and set definitions from XLSX files with favorites and recent files
+- **Order Processing**: Automatically decode sets into components with visual indicators
+- **Manual Product Addition**: Add products to existing orders with validation
 - **Smart Price Distribution**: First component in a set receives the full price
 - **Flexible Architecture**: Easy to adapt for different stores by changing master files
+- **Crash Recovery**: Automatic state saving and error logging for reliability
 
-### New in v2.1! 🎉
+### 🎉 New in v2.2 - Complete UI/UX Overhaul!
+
+**Enhanced Main Window:**
+- 📁 Icons on all buttons for better visual clarity
+- 💡 Tooltips on every interactive element
+- 🎨 Color-coded status messages (green/yellow/red)
+- 📌 Pin/Unpin favorite master files
+- 🔄 Reload/Refresh functionality
+- ✅ Enhanced validation with detailed categorized reports
+- 🔍 Duplicate detection for orders and SKUs
+- 🛡️ Crash recovery with auto-save (every 60 seconds)
+- 📝 Error logging to `~/.decoder_tool/logs/`
+
+**Enhanced Preview Window:**
+- 🖱️ Right-click context menu (copy, delete, mark important, add notes)
+- 🔵 Visual indicators for decoded sets (light blue highlight)
+- ↩️ Undo/Redo support (Ctrl+Z / Ctrl+Y)
+- 🗑️ Bulk delete operations
+- 💬 Add notes to specific rows
+- 🔴 Mark important rows
+- ⌨️ Keyboard shortcuts (Del, Ctrl+Z, Ctrl+Y)
+
+### v2.1 Features
 
 - **SET_QUANTITY Support**: Handle sets with multiple quantities of the same component (e.g., 2x Barrier Cream in one bundle)
 - **Multi-CSV Loading**: Load single CSV file OR load entire folder with multiple CSV files at once
