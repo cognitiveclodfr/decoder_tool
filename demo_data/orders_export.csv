@@ -1,0 +1,11 @@
+Name,Email,Financial Status,Paid at,Fulfillment Status,Lineitem quantity,Lineitem name,Lineitem sku,Lineitem price,Lineitem discount,Shipping Name,Shipping Street,Shipping City,Shipping Zip,Shipping Province,Shipping Country
+#76360,customer1@example.com,paid,2024-10-20 10:30:00,unfulfilled,2,Relaxation Bundle,SET-RELAX,49.99,0.0,John Doe,123 Main St,New York,10001,NY,United States
+#76360,customer1@example.com,paid,2024-10-20 10:30:00,unfulfilled,1,Lavender Essential Oil 10ml,LAV-10ML,12.99,0.0,John Doe,123 Main St,New York,10001,NY,United States
+#76360,customer1@example.com,paid,2024-10-20 10:30:00,unfulfilled,1,Rose Essential Oil 10ml,ROSE-10ML,15.99,0.0,John Doe,123 Main St,New York,10001,NY,United States
+#76361,customer2@example.com,paid,2024-10-21 14:15:00,unfulfilled,1,Energy Bundle,SET-ENERGY,45.0,5.0,Jane Smith,456 Oak Ave,Los Angeles,90001,CA,United States
+#76361,customer2@example.com,paid,2024-10-21 14:15:00,unfulfilled,2,Tea Tree Essential Oil 10ml,TEA-10ML,10.99,0.0,Jane Smith,456 Oak Ave,Los Angeles,90001,CA,United States
+#76362,customer3@example.com,paid,2024-10-22 09:45:00,fulfilled,1,Complete Wellness Pack,SET-WELLNESS,89.99,10.0,Bob Johnson,789 Pine Rd,Chicago,60601,IL,United States
+#76363,customer4@example.com,paid,2024-10-23 16:20:00,unfulfilled,1,Relaxation Bundle,SET-RELAX,49.99,0.0,Alice Brown,321 Elm St,Houston,77001,TX,United States
+#76363,customer4@example.com,paid,2024-10-23 16:20:00,unfulfilled,3,Peppermint Essential Oil 10ml,PEPP-10ML,11.99,0.0,Alice Brown,321 Elm St,Houston,77001,TX,United States
+#76363,customer4@example.com,paid,2024-10-23 16:20:00,unfulfilled,1,Eucalyptus Essential Oil 10ml,EUCA-10ML,11.99,0.0,Alice Brown,321 Elm St,Houston,77001,TX,United States
+#76364,customer5@example.com,pending,,unfulfilled,2,Lavender Essential Oil 10ml,LAV-10ML,12.99,0.0,Charlie Wilson,654 Maple Dr,Phoenix,85001,AZ,United States
