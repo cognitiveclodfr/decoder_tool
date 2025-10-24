@@ -1,8 +1,9 @@
 # Decoder Tool - Project Summary
 
-## Project Completion Status: ✅ COMPLETE
+## Project Completion Status: ✅ COMPLETE (v2.0)
 
 All requirements have been successfully implemented and tested.
+**New in v2.0**: Auto SKU generation, interactive preview, data validation, and enhanced UX.
 
 ## Implementation Summary
 
@@ -23,33 +24,54 @@ All requirements have been successfully implemented and tested.
 3. **Order Processor** (`src/models/order_processor.py`)
    - Main processing logic for decoding sets
    - Manual product addition to orders
+   - **NEW**: Automatic SKU generation for empty SKUs
    - Correct price distribution (first component gets price)
    - Quantity multiplication with physical quantities
-   - 15 unit tests, all passing
+   - 20 unit tests, all passing (5 new tests for SKU generation)
 
-4. **File Handlers** (`src/utils/file_handlers.py`)
+4. **SKU Generator** (`src/utils/sku_generator.py`) **NEW!**
+   - Auto-generates SKUs from product names
+   - Handles special characters, spaces, case conversion
+   - SKU validation and sanitization
+   - 24 unit tests, all passing
+
+5. **File Handlers** (`src/utils/file_handlers.py`)
    - XLSX master file loading
    - CSV order export loading
    - CSV output saving
 
-5. **GUI Application** (`src/ui/main_window.py`)
-   - 3-section layout as specified
+6. **GUI Application** (`src/ui/main_window.py`)
+   - Enhanced 4-section layout
    - Section 1: Master file loading
    - Section 2: Order loading + manual product addition
-   - Section 3: Process and save
+   - **Section 2.5: Data Processing Utilities** (NEW!)
+     - Generate Missing SKUs button
+     - Validate Data button
+     - Status display
+   - Section 3: Preview & Save (enhanced)
    - User-friendly error messages and status updates
+
+7. **Preview Window** (`src/ui/preview_window.py`) **NEW!**
+   - Interactive table with search and filter
+   - Sort by any column
+   - Filter by order ID
+   - Double-click for row details
+   - Export selected rows
+   - Copy to clipboard
+   - Processing statistics display
 
 ### ✅ Testing
 
-**Total Tests: 40**
-- Unit Tests: 36
+**Total Tests: 69** (+29 new tests)
+- Unit Tests: 65
 - Integration Tests: 4
 - **All Tests Passing: 100%**
 
 Test Coverage:
 - `test_product_manager.py`: 12 tests
 - `test_set_manager.py`: 9 tests
-- `test_order_processor.py`: 15 tests
+- `test_order_processor.py`: 20 tests (+5 for SKU generation)
+- `test_sku_generator.py`: 24 tests (NEW!)
 - `test_integration.py`: 4 tests (complete workflow)
 
 ### ✅ Demo Data
@@ -65,6 +87,11 @@ Created realistic demo data files:
 - 10 line items total
 - Mix of sets and regular products
 - Realistic Shopify export format
+
+**orders_with_empty_skus.csv:** (NEW!)
+- 3 unique orders (#76365-#76367)
+- 6 line items with 3 empty SKUs (for testing SKU generation)
+- Includes testers and samples without SKUs
 
 ### ✅ Documentation
 
@@ -83,6 +110,7 @@ Created realistic demo data files:
 
 ### Functional Requirements ✅
 
+**Core Features (v1.0):**
 1. ✅ Load XLSX master file with PRODUCTS and SETS sheets
 2. ✅ Create product map (SKU -> {name, physical_qty})
 3. ✅ Create set map (SET_SKU -> [component SKUs])
@@ -96,6 +124,17 @@ Created realistic demo data files:
 11. ✅ Quantity multiplication (order_qty × physical_qty)
 12. ✅ Handle missing components gracefully
 13. ✅ Save processed orders as CSV
+
+**New Features (v2.0):**
+14. ✅ **Auto SKU Generation**: Generate SKUs from product names for empty SKU fields
+15. ✅ **Interactive Preview Table**: View and verify results before saving
+16. ✅ **Search & Filter**: Find specific orders/products in preview
+17. ✅ **Data Validation**: Pre-processing checks for issues
+18. ✅ **Processing Statistics**: Detailed summary of changes
+19. ✅ **Export Selected Rows**: Save only what you need
+20. ✅ **Copy to Clipboard**: Easy Excel integration
+21. ✅ **Sort by Column**: Click headers to sort
+22. ✅ **Row Details**: Double-click for full row information
 
 ### Technical Requirements ✅
 

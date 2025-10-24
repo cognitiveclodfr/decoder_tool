@@ -1,8 +1,9 @@
 """Order Processor - handles order processing and set decoding logic"""
 import pandas as pd
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from .product_manager import ProductManager
 from .set_manager import SetManager
+from ..utils.sku_generator import generate_sku_from_name, is_empty_sku
 
 
 class OrderProcessor:
@@ -28,6 +29,44 @@ class OrderProcessor:
             df: DataFrame with order data from Shopify export
         """
         self._orders_df = df.copy()
+
+    def generate_missing_skus(self) -> Tuple[int, List[Dict[str, str]]]:
+        """
+        Generate SKUs for products that have empty SKU field
+
+        Generates SKU from product name by converting to uppercase
+        and replacing spaces with underscores.
+
+        Returns:
+            Tuple of (count_generated, list of changes)
+            where changes = [{'name': str, 'old_sku': str, 'new_sku': str}, ...]
+        """
+        if self._orders_df is None:
+            return 0, []
+
+        changes = []
+        count = 0
+
+        for idx, row in self._orders_df.iterrows():
+            sku = row.get('Lineitem sku', '')
+            name = row.get('Lineitem name', '')
+
+            if is_empty_sku(sku) and name:
+                # Generate new SKU from product name
+                new_sku = generate_sku_from_name(name)
+
+                # Track the change
+                changes.append({
+                    'name': str(name),
+                    'old_sku': str(sku) if not is_empty_sku(sku) else '(empty)',
+                    'new_sku': new_sku
+                })
+
+                # Update the dataframe
+                self._orders_df.at[idx, 'Lineitem sku'] = new_sku
+                count += 1
+
+        return count, changes
 
     def add_manual_product(self, order_id: str, sku: str, quantity: int) -> tuple[bool, str]:
         """

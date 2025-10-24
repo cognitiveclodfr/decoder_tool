@@ -1,0 +1,7 @@
+Name,Email,Financial Status,Paid at,Fulfillment Status,Lineitem quantity,Lineitem name,Lineitem sku,Lineitem price,Lineitem discount,Shipping Name,Shipping Street,Shipping City,Shipping Zip,Shipping Province,Shipping Country
+#76365,customer6@example.com,paid,2024-10-24 10:00:00,unfulfilled,1,Lavender Essential Oil 10ml,LAV-10ML,12.99,0,Emily Davis,111 Test Ave,Seattle,98101,WA,United States
+#76365,customer6@example.com,paid,2024-10-24 10:00:00,unfulfilled,1,Barrier Cream Sample,,0.0,0,Emily Davis,111 Test Ave,Seattle,98101,WA,United States
+#76365,customer6@example.com,paid,2024-10-24 10:00:00,unfulfilled,1,Face Oil Sample,,0.0,0,Emily Davis,111 Test Ave,Seattle,98101,WA,United States
+#76366,customer7@example.com,paid,2024-10-24 11:00:00,unfulfilled,2,Relaxation Bundle,SET-RELAX,49.99,0,Michael Brown,222 Demo St,Boston,02101,MA,United States
+#76366,customer7@example.com,paid,2024-10-24 11:00:00,unfulfilled,1,Rose Essential Oil 10ml,ROSE-10ML,15.99,0,Michael Brown,222 Demo St,Boston,02101,MA,United States
+#76367,customer8@example.com,paid,2024-10-24 12:00:00,unfulfilled,1,Chamomile Tester,,0.0,0,Sarah Wilson,333 Sample Rd,Denver,80201,CO,United States
