@@ -43,3 +43,7 @@ Thumbs.db
 # Demo output files (keep source demo files)
 output/
 *.processed.csv
+
+# PyInstaller
+*.spec.backup
+release_package/

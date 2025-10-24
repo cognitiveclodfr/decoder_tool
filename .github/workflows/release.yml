@@ -1,0 +1,120 @@
+name: Build and Release
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: DecoderTool.exe
+            asset_name: DecoderTool-Windows-x64.exe
+          - os: ubuntu-latest
+            artifact_name: DecoderTool
+            asset_name: DecoderTool-Linux-x64
+          - os: macos-latest
+            artifact_name: DecoderTool
+            asset_name: DecoderTool-macOS-x64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Run tests
+      run: |
+        pip install pytest
+        pytest tests/ -v
+
+    - name: Build with PyInstaller (using spec file)
+      run: |
+        pyinstaller DecoderTool.spec
+
+    - name: Create release package (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path "release_package"
+        Copy-Item "dist/DecoderTool.exe" -Destination "release_package/"
+        Copy-Item "demo_data" -Destination "release_package/demo_data" -Recurse
+        Copy-Item "README.md" -Destination "release_package/"
+        Compress-Archive -Path "release_package/*" -DestinationPath "DecoderTool-Windows-x64.zip"
+
+    - name: Create release package (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        mkdir -p release_package
+        cp dist/DecoderTool release_package/
+        cp -r demo_data release_package/
+        cp README.md release_package/
+        cd release_package && tar -czf ../DecoderTool-${{ matrix.os }}-x64.tar.gz * && cd ..
+
+    - name: Upload Windows artifact
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: DecoderTool-Windows-x64
+        path: DecoderTool-Windows-x64.zip
+
+    - name: Upload Linux artifact
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: DecoderTool-Linux-x64
+        path: DecoderTool-ubuntu-latest-x64.tar.gz
+
+    - name: Upload macOS artifact
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: DecoderTool-macOS-x64
+        path: DecoderTool-macos-latest-x64.tar.gz
+
+    - name: Upload Release Asset (Windows)
+      if: github.event_name == 'release' && matrix.os == 'windows-latest'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./DecoderTool-Windows-x64.zip
+        asset_name: DecoderTool-Windows-x64.zip
+        asset_content_type: application/zip
+
+    - name: Upload Release Asset (Linux)
+      if: github.event_name == 'release' && matrix.os == 'ubuntu-latest'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./DecoderTool-ubuntu-latest-x64.tar.gz
+        asset_name: DecoderTool-Linux-x64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Release Asset (macOS)
+      if: github.event_name == 'release' && matrix.os == 'macos-latest'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./DecoderTool-macos-latest-x64.tar.gz
+        asset_name: DecoderTool-macOS-x64.tar.gz
+        asset_content_type: application/gzip

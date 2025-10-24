@@ -17,12 +17,29 @@ This tool helps e-commerce businesses that sell product bundles (sets) to proper
 
 ## Installation
 
-### Requirements
+### Option 1: Download Pre-built Executable (Easiest)
 
+**No Python installation required!**
+
+1. Go to the [Releases](https://github.com/cognitiveclodfr/decoder_tool/releases) page
+2. Download the latest version for your operating system:
+   - **Windows**: `DecoderTool-Windows-x64.zip`
+   - **Linux**: `DecoderTool-Linux-x64.tar.gz`
+   - **macOS**: `DecoderTool-macOS-x64.tar.gz`
+3. Extract the archive
+4. Run the executable:
+   - **Windows**: Double-click `DecoderTool.exe`
+   - **Linux/macOS**: Run `./DecoderTool` from terminal
+
+The executable includes demo data files in the `demo_data/` folder.
+
+### Option 2: Run from Source
+
+**Requirements:**
 - Python 3.8 or higher
 - pip package manager
 
-### Setup
+**Setup:**
 
 1. Clone or download this repository
 2. Install dependencies:
@@ -232,6 +249,53 @@ Check that:
 1. The set SKU exists in the SETS sheet
 2. The set SKU matches exactly (case-sensitive)
 3. The set has at least one component defined
+
+## Building from Source
+
+If you want to create your own executable or contribute to development:
+
+### Building Executables
+
+1. Install development dependencies:
+```bash
+pip install -r requirements-dev.txt
+```
+
+2. Run the build script:
+```bash
+python build_exe.py
+```
+
+The executable will be created in `dist/DecoderTool_Release/`
+
+For detailed build instructions, see [BUILD.md](BUILD.md).
+
+### Automatic Builds
+
+The project includes GitHub Actions workflow that automatically builds executables for Windows, Linux, and macOS when you create a release.
+
+To trigger automatic builds:
+1. Create a new release on GitHub
+2. Tag it with a version (e.g., `v1.0.0`)
+3. GitHub Actions will build and attach executables automatically
+
+## Development
+
+### Running Tests
+
+```bash
+pytest
+```
+
+### Test Coverage
+
+```bash
+pytest --cov=src tests/
+```
+
+### Project Structure for Developers
+
+See [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) for detailed technical documentation.
 
 ## License
 

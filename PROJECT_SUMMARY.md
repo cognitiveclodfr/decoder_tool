@@ -111,6 +111,9 @@ Created realistic demo data files:
 
 ```
 decoder_tool/
+├── .github/
+│   └── workflows/
+│       └── release.yml      # GitHub Actions workflow
 ├── src/
 │   ├── models/              # Business logic
 │   │   ├── product_manager.py
@@ -129,9 +132,13 @@ decoder_tool/
 │   ├── HERBAR_TRUTH_FILE.xlsx
 │   └── orders_export.csv
 ├── main.py                  # Entry point
-├── requirements.txt         # Dependencies
-├── README.md               # User documentation
-└── PROJECT_SUMMARY.md      # This file
+├── build_exe.py             # Build script
+├── DecoderTool.spec         # PyInstaller config
+├── requirements.txt         # Runtime dependencies
+├── requirements-dev.txt     # Dev dependencies
+├── README.md                # User documentation
+├── BUILD.md                 # Build documentation
+└── PROJECT_SUMMARY.md       # This file
 ```
 
 ## How to Run
@@ -155,6 +162,17 @@ pytest
 ```bash
 python create_demo_files.py
 ```
+
+### Build Executable
+```bash
+# Install build dependencies
+pip install -r requirements-dev.txt
+
+# Build executable
+python build_exe.py
+```
+
+Output: `dist/DecoderTool_Release/`
 
 ## Test Results
 
@@ -210,6 +228,44 @@ Total: $49.99 (unchanged)
 - ✅ No hardcoded values
 - ✅ Configurable through master files
 
+## Automated Builds
+
+The project includes GitHub Actions workflow for automatic builds:
+
+### Features
+- **Multi-platform builds**: Windows, Linux, macOS
+- **Triggered on**: Release creation or manual dispatch
+- **Automated testing**: Runs full test suite before building
+- **Artifact uploads**: Executables attached to GitHub releases
+
+### Workflow Location
+`.github/workflows/release.yml`
+
+### Build Process
+1. Checkout code
+2. Set up Python 3.11
+3. Install dependencies
+4. Run all tests (must pass)
+5. Build with PyInstaller
+6. Create release packages
+7. Upload as release assets
+
+### Creating a Release
+1. Tag a new version: `git tag v1.0.0`
+2. Push tag: `git push --tags`
+3. Create GitHub release
+4. Workflow automatically builds and attaches executables
+
+### Build Artifacts
+- `DecoderTool-Windows-x64.zip` - Windows executable
+- `DecoderTool-Linux-x64.tar.gz` - Linux executable
+- `DecoderTool-macOS-x64.tar.gz` - macOS executable
+
+Each package includes:
+- Executable file
+- Demo data folder
+- README.md
+
 ## Delivery Checklist
 
 - ✅ Complete application with GUI
@@ -222,6 +278,8 @@ Total: $49.99 (unchanged)
 - ✅ Error handling
 - ✅ User-friendly interface
 - ✅ All code in English
+- ✅ Automated build system (GitHub Actions)
+- ✅ Multi-platform executables (Windows/Linux/macOS)
 
 ## Notes
 
