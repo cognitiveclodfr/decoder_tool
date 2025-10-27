@@ -213,6 +213,11 @@ class OrderProcessor:
         """
         Apply automatic product addition rules to processed orders
 
+        Supports two types of addition rules:
+        1. FIXED: Add fixed quantity specified in rule (e.g., always add 1)
+        2. MATCHED: Add quantity matching the trigger product quantity
+           (e.g., if order has 3 × NECTAR-30, add 3 × NECTAR-DROPPER)
+
         For each order, check if any product SKU has an addition rule.
         If so, automatically add the companion product if it's not already in the order.
 
@@ -246,7 +251,15 @@ class OrderProcessor:
                 if self.addition_manager.has_addition_rule(sku):
                     rule = self.addition_manager.get_addition_rule(sku)
                     add_sku = rule['add_sku']
-                    add_quantity = rule['quantity']
+                    rule_type = rule.get('type', 'FIXED')  # Default to FIXED for backwards compatibility
+
+                    # Calculate quantity based on rule type
+                    if rule_type == 'MATCHED':
+                        # Match the quantity of the trigger product
+                        add_quantity = int(row['Lineitem quantity'])
+                    else:
+                        # FIXED type: use quantity from rule
+                        add_quantity = rule['quantity']
 
                     # Only add if not already in order
                     if add_sku not in existing_skus:

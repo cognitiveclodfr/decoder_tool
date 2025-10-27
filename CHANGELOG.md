@@ -2,6 +2,84 @@
 
 All notable changes to Decoder Tool will be documented in this file.
 
+## [2.3.1] - 2025-10-24
+
+### 🎯 Enhancement: FIXED vs MATCHED Addition Types
+
+Enhanced automatic companion product addition with two distinct modes to handle different business scenarios.
+
+### ✨ New Features
+
+**TYPE Column in ADDITION Sheet**
+- New optional `TYPE` column to specify addition behavior
+- Two types supported: `FIXED` and `MATCHED`
+- Defaults to `FIXED` for backwards compatibility
+
+**FIXED Type** (фіксована кількість)
+- Adds a fixed quantity specified in QUANTITY column
+- Quantity does NOT depend on trigger product quantity
+- Example: Always add 1 manual PDF regardless of product quantity
+```
+IF_SKU: PRODUCT-A | THEN_ADD: MANUAL-PDF | TYPE: FIXED | QUANTITY: 1
+→ 5 × PRODUCT-A → add 1 × MANUAL-PDF
+→ 10 × PRODUCT-A → add 1 × MANUAL-PDF
+```
+
+**MATCHED Type** (кількість співпадає)
+- Adds quantity matching the trigger product quantity
+- QUANTITY column is ignored for MATCHED type
+- Example: Each bottle needs its own dropper
+```
+IF_SKU: NECTAR-30 | THEN_ADD: NECTAR-DROPPER | TYPE: MATCHED
+→ 3 × NECTAR-30 → add 3 × NECTAR-DROPPER
+→ 5 × NECTAR-30 → add 5 × NECTAR-DROPPER
+→ 10 × NECTAR-30 → add 10 × NECTAR-DROPPER
+```
+
+### 🔧 Implementation Details
+
+**AdditionManager Updates**
+- Stores `type` field in addition rules ('FIXED' or 'MATCHED')
+- Case-insensitive type parsing (fixed, FIXED, matched, MATCHED all work)
+- Invalid type values default to FIXED
+- Full backwards compatibility: rules without TYPE default to FIXED
+
+**OrderProcessor Enhancement**
+- Enhanced `_apply_addition_rules()` to handle both types
+- For FIXED: uses `rule['quantity']`
+- For MATCHED: uses `row['Lineitem quantity']` from trigger product
+- Both types maintain price = 0 for added products
+
+### ✅ Testing
+- **11 new AdditionManager TYPE tests** (20 total for AdditionManager)
+- **5 new integration tests** for FIXED/MATCHED scenarios
+- **123 total tests, all passing**
+- Tests cover:
+  - FIXED type with various quantities
+  - MATCHED type with various quantities
+  - Mixed FIXED and MATCHED rules in same file
+  - Backwards compatibility (no TYPE column)
+  - Case insensitivity and invalid values
+  - Multiple orders with different quantities
+
+### 📖 Use Cases
+
+**FIXED Type:**
+- Digital products (manuals, PDFs) - always add 1 copy
+- Promotional items - fixed quantity per order
+- Starter kits - fixed components regardless of quantity
+
+**MATCHED Type:**
+- Consumables with accessories (bottles + droppers)
+- Products with matching parts (devices + batteries)
+- Items requiring 1:1 pairing
+
+### 🔄 Backwards Compatibility
+- ✅ Existing ADDITION sheets without TYPE column continue to work
+- ✅ Default behavior unchanged (FIXED type)
+- ✅ All existing tests pass
+- ✅ No changes required to existing master files
+
 ## [2.3.0] - 2025-10-24
 
 ### 🎉 New Feature: Automatic Companion Product Addition

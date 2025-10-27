@@ -17,14 +17,20 @@ class AdditionManager:
         Expected columns:
         - IF_SKU: Target SKU that triggers addition
         - THEN_ADD: SKU to automatically add
-        - QUANTITY: Quantity of the added product (optional, defaults to 1)
+        - TYPE: Addition type - "FIXED" or "MATCHED" (optional, defaults to "FIXED")
+          - FIXED: Add fixed quantity specified in QUANTITY column
+          - MATCHED: Add quantity matching the trigger product quantity
+        - QUANTITY: Quantity of the added product (optional, defaults to 1, ignored for MATCHED type)
 
-        Example:
-        IF_SKU: NECTAR-30
-        THEN_ADD: NECTAR-DROPPER
-        QUANTITY: 1
+        Examples:
+        1. FIXED type (default):
+           IF_SKU: PRODUCT-A, THEN_ADD: ACCESSORY-B, TYPE: FIXED, QUANTITY: 1
+           → Always add 1 × ACCESSORY-B when PRODUCT-A is in order
 
-        When NECTAR-30 is in an order, NECTAR-DROPPER will be automatically added.
+        2. MATCHED type:
+           IF_SKU: NECTAR-30, THEN_ADD: NECTAR-DROPPER, TYPE: MATCHED
+           → Add 3 × NECTAR-DROPPER when order has 3 × NECTAR-30
+           → Add 5 × NECTAR-DROPPER when order has 5 × NECTAR-30
 
         Args:
             df: DataFrame with addition rules
@@ -38,8 +44,9 @@ class AdditionManager:
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
 
-        # Check if QUANTITY column exists
+        # Check for optional columns
         has_quantity_column = 'QUANTITY' in df.columns
+        has_type_column = 'TYPE' in df.columns
 
         # Build addition rules map
         self._addition_rules = {}
@@ -57,7 +64,16 @@ class AdditionManager:
                 then_add.lower() in ('nan', 'none', '')):
                 continue
 
+            # Get type from TYPE column, default to FIXED
+            rule_type = 'FIXED'
+            if has_type_column and not pd.isna(row['TYPE']):
+                rule_type = str(row['TYPE']).strip().upper()
+                # Validate type
+                if rule_type not in ('FIXED', 'MATCHED'):
+                    rule_type = 'FIXED'  # Default to FIXED for invalid values
+
             # Get quantity from QUANTITY column, default to 1
+            # Note: For MATCHED type, quantity is ignored
             if has_quantity_column:
                 try:
                     quantity = int(row['QUANTITY'])
@@ -68,7 +84,8 @@ class AdditionManager:
 
             self._addition_rules[if_sku] = {
                 'add_sku': then_add,
-                'quantity': quantity
+                'quantity': quantity,
+                'type': rule_type
             }
 
     def get_addition_rule(self, sku: str) -> Optional[Dict[str, any]]:
