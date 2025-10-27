@@ -220,6 +220,102 @@ class TestAdditionManager:
         rule_b = manager.get_addition_rule('PRODUCT-B')
         assert rule_b['add_sku'] == 'PRODUCT-Y'
 
+    def test_type_fixed(self):
+        """Test FIXED type addition rule"""
+        manager = AdditionManager()
+
+        df = pd.DataFrame({
+            'IF_SKU': ['PRODUCT-A'],
+            'THEN_ADD': ['PRODUCT-B'],
+            'TYPE': ['FIXED'],
+            'QUANTITY': [2]
+        })
+        manager.load_from_dataframe(df)
+
+        rule = manager.get_addition_rule('PRODUCT-A')
+        assert rule['type'] == 'FIXED'
+        assert rule['quantity'] == 2
+
+    def test_type_matched(self):
+        """Test MATCHED type addition rule"""
+        manager = AdditionManager()
+
+        df = pd.DataFrame({
+            'IF_SKU': ['NECTAR-30'],
+            'THEN_ADD': ['NECTAR-DROPPER'],
+            'TYPE': ['MATCHED']
+        })
+        manager.load_from_dataframe(df)
+
+        rule = manager.get_addition_rule('NECTAR-30')
+        assert rule['type'] == 'MATCHED'
+        assert rule['add_sku'] == 'NECTAR-DROPPER'
+
+    def test_type_defaults_to_fixed(self):
+        """Test that TYPE defaults to FIXED if not specified"""
+        manager = AdditionManager()
+
+        df = pd.DataFrame({
+            'IF_SKU': ['PRODUCT-A'],
+            'THEN_ADD': ['PRODUCT-B'],
+            'QUANTITY': [1]
+            # No TYPE column
+        })
+        manager.load_from_dataframe(df)
+
+        rule = manager.get_addition_rule('PRODUCT-A')
+        assert rule['type'] == 'FIXED'
+
+    def test_type_invalid_defaults_to_fixed(self):
+        """Test that invalid TYPE values default to FIXED"""
+        manager = AdditionManager()
+
+        df = pd.DataFrame({
+            'IF_SKU': ['PRODUCT-A', 'PRODUCT-B', 'PRODUCT-C'],
+            'THEN_ADD': ['PRODUCT-X', 'PRODUCT-Y', 'PRODUCT-Z'],
+            'TYPE': ['INVALID', 'random', '']
+        })
+        manager.load_from_dataframe(df)
+
+        # All should default to FIXED
+        assert manager.get_addition_rule('PRODUCT-A')['type'] == 'FIXED'
+        assert manager.get_addition_rule('PRODUCT-B')['type'] == 'FIXED'
+        assert manager.get_addition_rule('PRODUCT-C')['type'] == 'FIXED'
+
+    def test_type_case_insensitive(self):
+        """Test that TYPE is case-insensitive"""
+        manager = AdditionManager()
+
+        df = pd.DataFrame({
+            'IF_SKU': ['PRODUCT-A', 'PRODUCT-B', 'PRODUCT-C', 'PRODUCT-D'],
+            'THEN_ADD': ['PRODUCT-W', 'PRODUCT-X', 'PRODUCT-Y', 'PRODUCT-Z'],
+            'TYPE': ['fixed', 'FIXED', 'matched', 'MATCHED']
+        })
+        manager.load_from_dataframe(df)
+
+        assert manager.get_addition_rule('PRODUCT-A')['type'] == 'FIXED'
+        assert manager.get_addition_rule('PRODUCT-B')['type'] == 'FIXED'
+        assert manager.get_addition_rule('PRODUCT-C')['type'] == 'MATCHED'
+        assert manager.get_addition_rule('PRODUCT-D')['type'] == 'MATCHED'
+
+    def test_mixed_types_in_same_file(self):
+        """Test loading both FIXED and MATCHED rules in same file"""
+        manager = AdditionManager()
+
+        df = pd.DataFrame({
+            'IF_SKU': ['PRODUCT-A', 'NECTAR-30', 'PRODUCT-C'],
+            'THEN_ADD': ['ACCESSORY-A', 'NECTAR-DROPPER', 'ACCESSORY-C'],
+            'TYPE': ['FIXED', 'MATCHED', 'FIXED'],
+            'QUANTITY': [1, 1, 3]
+        })
+        manager.load_from_dataframe(df)
+
+        assert manager.count() == 3
+        assert manager.get_addition_rule('PRODUCT-A')['type'] == 'FIXED'
+        assert manager.get_addition_rule('NECTAR-30')['type'] == 'MATCHED'
+        assert manager.get_addition_rule('PRODUCT-C')['type'] == 'FIXED'
+        assert manager.get_addition_rule('PRODUCT-C')['quantity'] == 3
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
