@@ -13,8 +13,11 @@ from src.models.product_manager import ProductManager
 from src.models.set_manager import SetManager
 from src.models.addition_manager import AdditionManager
 from src.models.order_processor import OrderProcessor
+from src.models.client_profile_manager import ClientProfileManager
 from src.utils.file_handlers import MasterFileLoader, OrdersFileLoader
+from src.utils.column_mapper import ColumnMapper
 from src.ui.preview_window import show_preview
+from src.ui.profile_manager_window import show_profile_manager
 from src.ui.ui_constants import ICONS, COLORS, TOOLTIPS, FONTS, PADDING, WINDOW_SIZES, STATUS_MESSAGES
 from src.ui.ui_utils import (ToolTip, create_button_with_icon, StatusBar, set_status_color,
                               show_context_menu, confirm_dialog, info_dialog, error_dialog, warning_dialog)
@@ -53,12 +56,14 @@ class DecoderToolApp:
         self.set_manager = SetManager()
         self.addition_manager = AdditionManager()
         self.order_processor = OrderProcessor(self.product_manager, self.set_manager, self.addition_manager)
+        self.profile_manager = ClientProfileManager()
 
         # State tracking
         self.master_loaded = False
         self.orders_loaded = False
         self.current_master_file = None
         self.current_orders_files = []
+        self.current_profile_id = None  # Currently selected profile
 
         # Undo/Redo stacks
         self.undo_stack = []
@@ -131,6 +136,16 @@ class DecoderToolApp:
 
         # Section 1: Master File
         self._create_master_file_section(main_frame, row=current_row)
+        current_row += 1
+
+        # Separator
+        ttk.Separator(main_frame, orient='horizontal').grid(
+            row=current_row, column=0, sticky=(tk.W, tk.E), pady=PADDING['normal']
+        )
+        current_row += 1
+
+        # Section 1.5: Client Profile Selection
+        self._create_profile_section(main_frame, row=current_row)
         current_row += 1
 
         # Separator
@@ -215,6 +230,44 @@ class DecoderToolApp:
 
         # Context menu for master file section
         self._create_master_context_menu()
+
+    def _create_profile_section(self, parent, row):
+        """Create Section 1.5: Client Profile Selection"""
+        section = ttk.LabelFrame(parent, text=f"👤 Client Profile",
+                                padding=PADDING['normal'])
+        section.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=PADDING['small'])
+        section.columnconfigure(2, weight=1)
+
+        # Profile dropdown
+        ttk.Label(section, text="Select Profile:").grid(row=0, column=0, sticky=tk.W, padx=PADDING['small'])
+
+        self.profile_var = tk.StringVar(value="No Profile")
+        self.profile_combo = ttk.Combobox(
+            section,
+            textvariable=self.profile_var,
+            state='readonly',
+            width=30
+        )
+        self.profile_combo.grid(row=0, column=1, sticky=tk.W, padx=PADDING['small'])
+        self.profile_combo.bind('<<ComboboxSelected>>', self._on_profile_change)
+        ToolTip(self.profile_combo, "Select client profile for column mapping and output folder")
+
+        # Manage profiles button
+        manage_btn = ttk.Button(section, text="Manage Profiles", command=self._open_profile_manager)
+        manage_btn.grid(row=0, column=2, sticky=tk.W, padx=PADDING['small'])
+        ToolTip(manage_btn, "Open profile manager to create, edit, or delete client profiles")
+
+        # Profile info label
+        self.profile_info_label = ttk.Label(
+            section,
+            text="No profile selected - using standard Shopify columns",
+            foreground=COLORS['info'],
+            font=FONTS['small']
+        )
+        self.profile_info_label.grid(row=1, column=0, columnspan=3, sticky=tk.W, padx=PADDING['small'], pady=(PADDING['tiny'], 0))
+
+        # Load profiles
+        self._refresh_profile_list()
 
     def _create_orders_section(self, parent, row):
         """Create Section 2: Orders Loading with enhanced features"""
@@ -749,8 +802,16 @@ class DecoderToolApp:
             self._update_status("Loading orders...", 'info')
             self.logger.log_info(f"Loading orders: {file_path}", "Orders")
 
-            orders_df = OrdersFileLoader.load(file_path)
+            # Get column mapper from current profile
+            column_mapper = self._get_current_column_mapper()
+
+            # Load with column mapping if profile is selected
+            orders_df = OrdersFileLoader.load(file_path, column_mapper)
             self.order_processor.load_orders(orders_df)
+
+            # Log if column mapping was applied
+            if column_mapper and column_mapper.has_mapping():
+                self.logger.log_info("Column mapping applied from profile", "Orders")
 
             self.orders_loaded = True
             self.current_orders_files = [file_path]
@@ -796,8 +857,16 @@ class DecoderToolApp:
             self._update_status("Loading orders from folder...", 'info')
             self.logger.log_info(f"Loading orders from folder: {folder_path}", "Orders")
 
-            orders_df, file_names = OrdersFileLoader.load_from_folder(folder_path)
+            # Get column mapper from current profile
+            column_mapper = self._get_current_column_mapper()
+
+            # Load with column mapping if profile is selected
+            orders_df, file_names = OrdersFileLoader.load_from_folder(folder_path, column_mapper)
             self.order_processor.load_orders(orders_df)
+
+            # Log if column mapping was applied
+            if column_mapper and column_mapper.has_mapping():
+                self.logger.log_info("Column mapping applied from profile", "Orders")
 
             self.orders_loaded = True
             self.current_orders_files = [str(Path(folder_path) / name) for name in file_names]
@@ -1235,11 +1304,31 @@ class DecoderToolApp:
     def _save_processed_data(self, dataframe: pd.DataFrame):
         """Save processed data to CSV"""
         try:
+            # Get default save location from profile if available
+            initial_dir = str(Path.home())
+            initial_file = "processed_orders.csv"
+
+            if self.current_profile_id:
+                profile = self.profile_manager.get_profile(self.current_profile_id)
+                if profile and profile.output_folder:
+                    initial_dir = profile.output_folder
+                    # Ensure output folder exists
+                    try:
+                        profile.ensure_output_folder()
+                    except Exception as e:
+                        self.logger.log_warning(f"Could not create output folder: {str(e)}", "Save")
+
+                    # Add client name to filename
+                    initial_file = f"{profile.client_name}_processed_orders.csv"
+                    # Sanitize filename
+                    initial_file = "".join(c for c in initial_file if c.isalnum() or c in (' ', '_', '-', '.')).strip()
+
             file_path = filedialog.asksaveasfilename(
                 title="Save Processed Orders",
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                initialfile="processed_orders.csv"
+                initialdir=initial_dir,
+                initialfile=initial_file
             )
 
             if not file_path:
@@ -1261,6 +1350,110 @@ class DecoderToolApp:
         except Exception as e:
             self.logger.log_exception(e, "Save Data")
             error_dialog(self.root, "Error", f"Failed to save data:\n{str(e)}")
+
+    # ==================== Profile Management ====================
+
+    def _refresh_profile_list(self):
+        """Refresh the profile dropdown list"""
+        try:
+            # Get list of profiles
+            profile_names = self.profile_manager.get_profile_names()
+
+            # Update combobox
+            if profile_names:
+                values = ["No Profile"] + list(profile_names.values())
+                self.profile_combo['values'] = values
+
+                # Restore previously selected profile if available
+                if self.current_profile_id and self.current_profile_id in profile_names:
+                    self.profile_var.set(profile_names[self.current_profile_id])
+                elif not self.current_profile_id:
+                    self.profile_var.set("No Profile")
+            else:
+                self.profile_combo['values'] = ["No Profile"]
+                self.profile_var.set("No Profile")
+                self.current_profile_id = None
+
+        except Exception as e:
+            self.logger.log_exception(e, "Refresh Profile List")
+            error_dialog(self.root, "Error", f"Failed to load profiles:\n{str(e)}")
+
+    def _on_profile_change(self, event):
+        """Handle profile selection change"""
+        selected_name = self.profile_var.get()
+
+        if selected_name == "No Profile":
+            self.current_profile_id = None
+            self.profile_info_label.config(
+                text="No profile selected - using standard Shopify columns",
+                foreground=COLORS['info']
+            )
+            self.logger.log_info("Profile deselected", "ProfileChange")
+            return
+
+        # Find profile by name
+        for profile in self.profile_manager.get_all_profiles():
+            if profile.client_name == selected_name:
+                self.current_profile_id = profile.client_id
+                self._update_profile_info(profile)
+                self.logger.log_info(f"Profile selected: {profile.client_id}", "ProfileChange")
+                return
+
+    def _update_profile_info(self, profile):
+        """Update profile info label"""
+        if not profile:
+            return
+
+        info_parts = [f"Client: {profile.client_name}"]
+
+        if profile.platform:
+            info_parts.append(f"Platform: {profile.platform}")
+
+        if profile.has_column_mapping():
+            mapping_count = len(profile.column_mapping)
+            info_parts.append(f"Column mapping: {mapping_count} columns")
+
+        if profile.output_folder:
+            info_parts.append(f"Output folder: {profile.output_folder}")
+
+        info_text = " | ".join(info_parts)
+        self.profile_info_label.config(text=info_text, foreground=COLORS['success'])
+
+    def _open_profile_manager(self):
+        """Open profile manager window"""
+        try:
+            def on_profile_selected(client_id):
+                """Callback when profile is selected in manager"""
+                profile = self.profile_manager.get_profile(client_id)
+                if profile:
+                    self.profile_var.set(profile.client_name)
+                    self.current_profile_id = client_id
+                    self._update_profile_info(profile)
+
+            show_profile_manager(self.root, self.profile_manager, on_profile_selected)
+
+            # Refresh profile list after manager closes
+            self._refresh_profile_list()
+
+        except Exception as e:
+            self.logger.log_exception(e, "Open Profile Manager")
+            error_dialog(self.root, "Error", f"Failed to open profile manager:\n{str(e)}")
+
+    def _get_current_column_mapper(self) -> Optional[ColumnMapper]:
+        """
+        Get column mapper for currently selected profile
+
+        Returns:
+            ColumnMapper instance or None if no profile selected
+        """
+        if not self.current_profile_id:
+            return None
+
+        profile = self.profile_manager.get_profile(self.current_profile_id)
+        if not profile:
+            return None
+
+        return ColumnMapper(profile)
 
     # ==================== Window Management ====================
 
