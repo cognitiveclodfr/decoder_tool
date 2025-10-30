@@ -2,6 +2,7 @@
 import pandas as pd
 from pathlib import Path
 from typing import Tuple, Optional, List
+from .column_mapper import ColumnMapper
 
 
 class MasterFileLoader:
@@ -51,25 +52,31 @@ class MasterFileLoader:
 
 
 class OrdersFileLoader:
-    """Handles loading of Shopify order export CSV files"""
+    """Handles loading of order export CSV files with optional column mapping"""
 
     @staticmethod
-    def load(file_path: str) -> pd.DataFrame:
+    def load(file_path: str, column_mapper: Optional[ColumnMapper] = None) -> pd.DataFrame:
         """
-        Load orders from CSV file
+        Load orders from CSV file with optional column mapping
 
         Args:
             file_path: Path to CSV file
+            column_mapper: Optional ColumnMapper for transforming column names
 
         Returns:
-            DataFrame with order data
+            DataFrame with order data (columns mapped to standard names if mapper provided)
 
         Raises:
             FileNotFoundError: If file doesn't exist
-            ValueError: If file cannot be parsed
+            ValueError: If file cannot be parsed or mapping fails
         """
         try:
             orders_df = pd.read_csv(file_path)
+
+            # Apply column mapping if provided
+            if column_mapper and column_mapper.has_mapping():
+                orders_df = column_mapper.apply_mapping(orders_df)
+
             return orders_df
         except FileNotFoundError:
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -77,15 +84,16 @@ class OrdersFileLoader:
             raise ValueError(f"Error loading orders file: {str(e)}")
 
     @staticmethod
-    def load_multiple(file_paths: List[str]) -> pd.DataFrame:
+    def load_multiple(file_paths: List[str], column_mapper: Optional[ColumnMapper] = None) -> pd.DataFrame:
         """
-        Load and combine multiple CSV files into single DataFrame
+        Load and combine multiple CSV files into single DataFrame with optional column mapping
 
         Args:
             file_paths: List of paths to CSV files
+            column_mapper: Optional ColumnMapper for transforming column names
 
         Returns:
-            Combined DataFrame with all order data
+            Combined DataFrame with all order data (columns mapped if mapper provided)
 
         Raises:
             FileNotFoundError: If any file doesn't exist
@@ -99,6 +107,11 @@ class OrdersFileLoader:
         for file_path in file_paths:
             try:
                 df = pd.read_csv(file_path)
+
+                # Apply column mapping if provided
+                if column_mapper and column_mapper.has_mapping():
+                    df = column_mapper.apply_mapping(df)
+
                 dataframes.append(df)
             except FileNotFoundError:
                 raise FileNotFoundError(f"File not found: {file_path}")
@@ -113,12 +126,13 @@ class OrdersFileLoader:
             raise ValueError(f"Error combining CSV files: {str(e)}")
 
     @staticmethod
-    def load_from_folder(folder_path: str) -> Tuple[pd.DataFrame, List[str]]:
+    def load_from_folder(folder_path: str, column_mapper: Optional[ColumnMapper] = None) -> Tuple[pd.DataFrame, List[str]]:
         """
-        Load all CSV files from a folder
+        Load all CSV files from a folder with optional column mapping
 
         Args:
             folder_path: Path to folder containing CSV files
+            column_mapper: Optional ColumnMapper for transforming column names
 
         Returns:
             Tuple of (combined DataFrame, list of loaded file names)
@@ -147,8 +161,8 @@ class OrdersFileLoader:
         file_paths = [str(f) for f in csv_files]
         file_names = [f.name for f in csv_files]
 
-        # Load and combine
-        combined_df = OrdersFileLoader.load_multiple(file_paths)
+        # Load and combine with column mapping
+        combined_df = OrdersFileLoader.load_multiple(file_paths, column_mapper)
 
         return combined_df, file_names
 
